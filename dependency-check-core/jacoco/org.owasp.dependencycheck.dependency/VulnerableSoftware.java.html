@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VulnerableSoftware.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.dependency</a> &gt; <span class="el_source">VulnerableSoftware.java</span></div><h1>VulnerableSoftware.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2018 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.dependency;
+
+import java.io.Serializable;
+
+import javax.annotation.concurrent.ThreadSafe;
+
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.dependencycheck.analyzer.exception.UnexpectedAnalysisException;
+import org.owasp.dependencycheck.utils.DependencyVersion;
+import us.springett.parsers.cpe.Cpe;
+import us.springett.parsers.cpe.ICpe;
+import us.springett.parsers.cpe.exceptions.CpeValidationException;
+import us.springett.parsers.cpe.values.LogicalValue;
+import us.springett.parsers.cpe.values.Part;
+
+/**
+ * A record containing information about vulnerable software. This is referenced
+ * from a vulnerability.
+ *
+ * @author Jeremy Long
+ */
+@ThreadSafe
+public class VulnerableSoftware extends Cpe implements Serializable {
+
+    /**
+     * The serial version UID.
+     */
+    private static final long serialVersionUID = 605319412326651052L;
+
+    /**
+     * The ending range, excluding the specified version, for matching
+     * vulnerable software
+     */
+    private final String versionEndExcluding;
+    /**
+     * The ending range, including the specified version, for matching
+     * vulnerable software
+     */
+    private final String versionEndIncluding;
+    /**
+     * The starting range, excluding the specified version, for matching
+     * vulnerable software
+     */
+    private final String versionStartExcluding;
+    /**
+     * the starting range, including the specified version, for matching
+     * vulnerable software
+     */
+    private final String versionStartIncluding;
+    /**
+     * A flag indicating whether this represents a vulnerable software object.
+     */
+    private final boolean vulnerable;
+
+    /**
+     * Constructs a new immutable VulnerableSoftware object that represents the
+     * Well Form Named defined in the CPE 2.3 specification. Specifying
+     * &lt;code&gt;null&lt;/code&gt; will be set to the default
+     * {@link us.springett.parsers.cpe.values.LogicalValue#ANY}. All values
+     * passed in must be well formed (i.e. special characters quoted with a
+     * backslash).
+     *
+     * @see &lt;a href=&quot;https://cpe.mitre.org/specification/&quot;&gt;CPE 2.3&lt;/a&gt;
+     * @param part the type of entry: application, operating system, or hardware
+     * @param vendor the vendor of the CPE entry
+     * @param product the product of the CPE entry
+     * @param version the version of the CPE entry
+     * @param update the update of the CPE entry
+     * @param edition the edition of the CPE entry
+     * @param language the language of the CPE entry
+     * @param swEdition the swEdition of the CPE entry
+     * @param targetSw the targetSw of the CPE entry
+     * @param targetHw the targetHw of the CPE entry
+     * @param other the other of the CPE entry
+     * @param versionEndExcluding the ending range, excluding the specified
+     * version, for matching vulnerable software
+     * @param versionEndIncluding the ending range, including the specified
+     * version, for matching vulnerable software
+     * @param versionStartExcluding the starting range, excluding the specified
+     * version, for matching vulnerable software
+     * @param versionStartIncluding the starting range, including the specified
+     * version, for matching vulnerable software
+     * @param vulnerable whether or not this represents a vulnerable software
+     * item
+     * @throws CpeValidationException thrown if one of the CPE entries is
+     * invalid
+     */
+    //CSOFF: ParameterNumber
+    public VulnerableSoftware(Part part, String vendor, String product, String version,
+            String update, String edition, String language, String swEdition,
+            String targetSw, String targetHw, String other,
+            String versionEndExcluding, String versionEndIncluding, String versionStartExcluding,
+            String versionStartIncluding, boolean vulnerable) throws CpeValidationException {
+<span class="fc" id="L114">        super(part, vendor, product, version, update, edition, language, swEdition, targetSw, targetHw, other);</span>
+<span class="fc" id="L115">        this.versionEndExcluding = versionEndExcluding;</span>
+<span class="fc" id="L116">        this.versionEndIncluding = versionEndIncluding;</span>
+<span class="fc" id="L117">        this.versionStartExcluding = versionStartExcluding;</span>
+<span class="fc" id="L118">        this.versionStartIncluding = versionStartIncluding;</span>
+<span class="fc" id="L119">        this.vulnerable = vulnerable;</span>
+<span class="fc" id="L120">    }</span>
+    //CSON: ParameterNumber
+
+    @Override
+    public int compareTo(@NotNull Object o) {
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (o instanceof VulnerableSoftware) {</span>
+<span class="fc" id="L126">            final VulnerableSoftware other = (VulnerableSoftware) o;</span>
+<span class="fc" id="L127">            return new CompareToBuilder()</span>
+<span class="fc" id="L128">                    .appendSuper(super.compareTo(other))</span>
+<span class="fc" id="L129">                    .append(versionStartIncluding, other.versionStartIncluding)</span>
+<span class="fc" id="L130">                    .append(versionStartExcluding, other.versionStartExcluding)</span>
+<span class="fc" id="L131">                    .append(versionEndIncluding, other.versionEndIncluding)</span>
+<span class="fc" id="L132">                    .append(versionEndExcluding, other.versionEndExcluding)</span>
+<span class="fc" id="L133">                    .append(this.vulnerable, other.vulnerable)</span>
+<span class="fc" id="L134">                    .build();</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        } else if (o instanceof Cpe) {</span>
+<span class="nc" id="L136">            return super.compareTo(o);</span>
+        }
+<span class="nc" id="L138">        throw new UnexpectedAnalysisException(&quot;Unable to compare &quot; + o.getClass().getCanonicalName());</span>
+    }
+
+    @Override
+    public int hashCode() {
+        // you pick a hard-coded, randomly chosen, non-zero, odd number
+        // ideally different for each class
+<span class="fc" id="L145">        return new HashCodeBuilder(13, 59)</span>
+<span class="fc" id="L146">                .appendSuper(super.hashCode())</span>
+<span class="fc" id="L147">                .append(versionEndExcluding)</span>
+<span class="fc" id="L148">                .append(versionEndIncluding)</span>
+<span class="fc" id="L149">                .append(versionStartExcluding)</span>
+<span class="fc" id="L150">                .append(versionStartIncluding)</span>
+<span class="fc" id="L151">                .toHashCode();</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L156" title="1 of 4 branches missed.">        if (obj == null || !(obj instanceof VulnerableSoftware)) {</span>
+<span class="fc" id="L157">            return false;</span>
+        }
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L160">            return true;</span>
+        }
+<span class="fc" id="L162">        final VulnerableSoftware rhs = (VulnerableSoftware) obj;</span>
+<span class="fc" id="L163">        return new EqualsBuilder()</span>
+<span class="fc" id="L164">                .appendSuper(super.equals(obj))</span>
+<span class="fc" id="L165">                .append(versionEndExcluding, rhs.versionEndExcluding)</span>
+<span class="fc" id="L166">                .append(versionEndIncluding, rhs.versionEndIncluding)</span>
+<span class="fc" id="L167">                .append(versionStartExcluding, rhs.versionStartExcluding)</span>
+<span class="fc" id="L168">                .append(versionStartIncluding, rhs.versionStartIncluding)</span>
+<span class="fc" id="L169">                .isEquals();</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Determines if the VulnerableSoftware matches the given target
+     * VulnerableSoftware. This does not follow the CPE 2.3 Specification
+     * exactly as there are cases where undefined comparisons will result in
+     * either true or false. For instance, 'ANY' will match 'm+wild cards' and
+     * NA will return false when the target has 'm+wild cards'.&lt;/p&gt;
+     * &lt;p&gt;
+     * For vulnerable software matching, the implementation also takes into
+     * account version ranges as specified within the NVD data feeds.&lt;/p&gt;
+     *
+     * @param target the target CPE to evaluate
+     * @return &lt;code&gt;true&lt;/code&gt; if the CPE matches the target; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    @Override
+    public boolean matches(ICpe target) {
+<span class="nc" id="L189">        boolean result = this.vulnerable;</span>
+<span class="nc" id="L190">        result &amp;= compareAttributes(this.getPart(), target.getPart());</span>
+<span class="nc" id="L191">        result &amp;= compareAttributes(this.getVendor(), target.getVendor());</span>
+<span class="nc" id="L192">        result &amp;= compareAttributes(this.getProduct(), target.getProduct());</span>
+
+        //TODO implement versionStart etc.
+<span class="nc" id="L195">        result &amp;= compareVersionRange(target.getVersion());</span>
+
+        //todo - if the vulnerablity has an update we are might not be collecting it correctly...
+        // as such, this check might cause FN if the CVE has an update in the data set
+<span class="nc" id="L199">        result &amp;= compareAttributes(this.getUpdate(), target.getUpdate());</span>
+<span class="nc" id="L200">        result &amp;= compareAttributes(this.getEdition(), target.getEdition());</span>
+<span class="nc" id="L201">        result &amp;= compareAttributes(this.getLanguage(), target.getLanguage());</span>
+<span class="nc" id="L202">        result &amp;= compareAttributes(this.getSwEdition(), target.getSwEdition());</span>
+<span class="nc" id="L203">        result &amp;= compareAttributes(this.getTargetSw(), target.getTargetSw());</span>
+<span class="nc" id="L204">        result &amp;= compareAttributes(this.getTargetHw(), target.getTargetHw());</span>
+<span class="nc" id="L205">        result &amp;= compareAttributes(this.getOther(), target.getOther());</span>
+<span class="nc" id="L206">        return result;</span>
+    }
+
+    /**
+     * Tests if the left matches the right.
+     *
+     * @param left the cpe to compare
+     * @param right the cpe to check
+     * @return &lt;code&gt;true&lt;/code&gt; if a match is found; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    public static boolean testMatch(ICpe left, ICpe right) {
+<span class="fc" id="L218">        boolean result = true;</span>
+<span class="fc" id="L219">        result &amp;= compareAttributes(left.getPart(), right.getPart());</span>
+<span class="fc" id="L220">        result &amp;= compareAttributes(left.getWellFormedVendor(), right.getWellFormedVendor());</span>
+<span class="fc" id="L221">        result &amp;= compareAttributes(left.getWellFormedProduct(), right.getWellFormedProduct());</span>
+
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">        if (right instanceof VulnerableSoftware) {</span>
+<span class="fc" id="L224">            final VulnerableSoftware vs = (VulnerableSoftware) right;</span>
+<span class="fc" id="L225">            result &amp;= vs.vulnerable;</span>
+<span class="fc" id="L226">            result &amp;= compareVersions(vs, left.getVersion());</span>
+<span class="pc bnc" id="L227" title="All 2 branches missed.">        } else if (left instanceof VulnerableSoftware) {</span>
+<span class="nc" id="L228">            final VulnerableSoftware vs = (VulnerableSoftware) left;</span>
+<span class="nc" id="L229">            result &amp;= vs.vulnerable;</span>
+<span class="nc" id="L230">            result &amp;= compareVersions(vs, right.getVersion());</span>
+<span class="nc" id="L231">        } else {</span>
+<span class="nc" id="L232">            result &amp;= compareAttributes(left.getWellFormedVersion(), right.getWellFormedVersion());</span>
+        }
+
+        //todo - if the vulnerablity has an update we are might not be collecting it correctly...
+        // as such, this check might cause FN if the CVE has an update in the data set
+<span class="fc" id="L237">        result &amp;= compareAttributes(left.getWellFormedUpdate(), right.getWellFormedUpdate());</span>
+<span class="fc" id="L238">        result &amp;= compareAttributes(left.getWellFormedEdition(), right.getWellFormedEdition());</span>
+<span class="fc" id="L239">        result &amp;= compareAttributes(left.getWellFormedLanguage(), right.getWellFormedLanguage());</span>
+<span class="fc" id="L240">        result &amp;= compareAttributes(left.getWellFormedSwEdition(), right.getWellFormedSwEdition());</span>
+<span class="fc" id="L241">        result &amp;= compareAttributes(left.getWellFormedTargetSw(), right.getWellFormedTargetSw());</span>
+<span class="fc" id="L242">        result &amp;= compareAttributes(left.getWellFormedTargetHw(), right.getWellFormedTargetHw());</span>
+<span class="fc" id="L243">        result &amp;= compareAttributes(left.getWellFormedOther(), right.getWellFormedOther());</span>
+<span class="fc" id="L244">        return result;</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Determines if the target VulnerableSoftware matches the
+     * VulnerableSoftware. This does not follow the CPE 2.3 Specification
+     * exactly as there are cases where undefined comparisons will result in
+     * either true or false. For instance, 'ANY' will match 'm+wild cards' and
+     * NA will return false when the target has 'm+wild cards'.&lt;/p&gt;
+     * &lt;p&gt;
+     * For vulnerable software matching, the implementation also takes into
+     * account version ranges as specified within the NVD data feeds.&lt;/p&gt;
+     *
+     * @param target the VulnerableSoftware to evaluate
+     * @return &lt;code&gt;true&lt;/code&gt; if the target CPE matches CPE; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    @Override
+    public boolean matchedBy(ICpe target) {
+<span class="fc" id="L264">        return testMatch(target, this);</span>
+    }
+
+    /**
+     * Evaluates the target against the version and version range checks:
+     * versionEndExcluding, versionStartExcluding versionEndIncluding, and
+     * versionStartIncluding.
+     *
+     * @param targetVersion the version to compare
+     * @return &lt;code&gt;true&lt;/code&gt; if the target version is matched; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    protected boolean compareVersionRange(String targetVersion) {
+<span class="fc" id="L277">        return compareVersions(this, targetVersion);</span>
+    }
+
+    /**
+     * Evaluates the target against the version and version range checks:
+     * versionEndExcluding, versionStartExcluding versionEndIncluding, and
+     * versionStartIncluding.
+     *
+     * @param vs a reference to the vulnerable software to compare
+     * @param targetVersion the version to compare
+     * @return &lt;code&gt;true&lt;/code&gt; if the target version is matched; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    protected static boolean compareVersions(VulnerableSoftware vs, String targetVersion) {
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        if (LogicalValue.NA.getAbbreviation().equals(vs.getVersion())) {</span>
+<span class="fc" id="L292">            return false;</span>
+        }
+        //if any of the four conditions will be evaluated - then true;
+<span class="pc bpc" id="L295" title="1 of 6 branches missed.">        boolean result = (vs.versionEndExcluding != null &amp;&amp; !vs.versionEndExcluding.isEmpty())</span>
+<span class="pc bpc" id="L296" title="1 of 4 branches missed.">                || (vs.versionStartExcluding != null &amp;&amp; !vs.versionStartExcluding.isEmpty())</span>
+<span class="pc bpc" id="L297" title="1 of 4 branches missed.">                || (vs.versionEndIncluding != null &amp;&amp; !vs.versionEndIncluding.isEmpty())</span>
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">                || (vs.versionStartIncluding != null &amp;&amp; !vs.versionStartIncluding.isEmpty());</span>
+
+<span class="fc bfc" id="L300" title="All 4 branches covered.">        if (!result &amp;&amp; compareAttributes(vs.getVersion(), targetVersion)) {</span>
+<span class="fc" id="L301">            return true;</span>
+        }
+
+<span class="fc" id="L304">        final DependencyVersion target = new DependencyVersion(targetVersion);</span>
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        if (target.getVersionParts().isEmpty()) {</span>
+<span class="nc" id="L306">            return false;</span>
+        }
+<span class="pc bpc" id="L308" title="1 of 6 branches missed.">        if (result &amp;&amp; vs.versionEndExcluding != null &amp;&amp; !vs.versionEndExcluding.isEmpty()) {</span>
+<span class="fc" id="L309">            final DependencyVersion endExcluding = new DependencyVersion(vs.versionEndExcluding);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            result = endExcluding.compareTo(target) &gt; 0;</span>
+        }
+<span class="pc bpc" id="L312" title="1 of 6 branches missed.">        if (result &amp;&amp; vs.versionStartExcluding != null &amp;&amp; !vs.versionStartExcluding.isEmpty()) {</span>
+<span class="fc" id="L313">            final DependencyVersion startExcluding = new DependencyVersion(vs.versionStartExcluding);</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">            result = startExcluding.compareTo(target) &lt; 0;</span>
+        }
+<span class="pc bpc" id="L316" title="1 of 6 branches missed.">        if (result &amp;&amp; vs.versionEndIncluding != null &amp;&amp; !vs.versionEndIncluding.isEmpty()) {</span>
+<span class="fc" id="L317">            final DependencyVersion endIncluding = new DependencyVersion(vs.versionEndIncluding);</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">            result &amp;= endIncluding.compareTo(target) &gt;= 0;</span>
+        }
+<span class="pc bpc" id="L320" title="1 of 6 branches missed.">        if (result &amp;&amp; vs.versionStartIncluding != null &amp;&amp; !vs.versionStartIncluding.isEmpty()) {</span>
+<span class="fc" id="L321">            final DependencyVersion startIncluding = new DependencyVersion(vs.versionStartIncluding);</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">            result &amp;= startIncluding.compareTo(target) &lt;= 0;</span>
+        }
+<span class="fc" id="L324">        return result;</span>
+    }
+
+    /**
+     * Returns the versionEndExcluding.
+     *
+     * @return the versionEndExcluding
+     */
+    public String getVersionEndExcluding() {
+<span class="fc" id="L333">        return versionEndExcluding;</span>
+    }
+
+    /**
+     * Returns the versionEndIncluding.
+     *
+     * @return the versionEndIncluding
+     */
+    public String getVersionEndIncluding() {
+<span class="fc" id="L342">        return versionEndIncluding;</span>
+    }
+
+    /**
+     * Returns the versionStartExcluding.
+     *
+     * @return the versionStartExcluding
+     */
+    public String getVersionStartExcluding() {
+<span class="fc" id="L351">        return versionStartExcluding;</span>
+    }
+
+    /**
+     * Returns the versionStartIncluding.
+     *
+     * @return the versionStartIncluding
+     */
+    public String getVersionStartIncluding() {
+<span class="fc" id="L360">        return versionStartIncluding;</span>
+    }
+
+    /**
+     * Returns the value of vulnerable.
+     *
+     * @return the value of vulnerable
+     */
+    public boolean isVulnerable() {
+<span class="fc" id="L369">        return vulnerable;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L374">        final StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L375">        sb.append(this.toCpe23FS());</span>
+<span class="fc" id="L376">        boolean textAdded = false;</span>
+<span class="pc bpc" id="L377" title="1 of 4 branches missed.">        if (versionStartIncluding != null &amp;&amp; !versionStartIncluding.isEmpty()) {</span>
+<span class="fc" id="L378">            sb.append(&quot; versions from (including) &quot;)</span>
+<span class="fc" id="L379">                    .append(versionStartIncluding);</span>
+<span class="fc" id="L380">            textAdded = true;</span>
+        }
+<span class="pc bpc" id="L382" title="3 of 4 branches missed.">        if (versionStartExcluding != null &amp;&amp; !versionStartExcluding.isEmpty()) {</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">            if (textAdded) {</span>
+<span class="nc" id="L384">                sb.append(&quot;;&quot;);</span>
+            }
+<span class="nc" id="L386">            sb.append(&quot; versions from (excluding) &quot;)</span>
+<span class="nc" id="L387">                    .append(versionStartExcluding);</span>
+<span class="nc" id="L388">            textAdded = true;</span>
+        }
+<span class="pc bpc" id="L390" title="1 of 4 branches missed.">        if (versionEndIncluding != null &amp;&amp; !versionEndIncluding.isEmpty()) {</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">            if (textAdded) {</span>
+<span class="fc" id="L392">                sb.append(&quot;;&quot;);</span>
+            }
+<span class="fc" id="L394">            sb.append(&quot; versions up to (including) &quot;)</span>
+<span class="fc" id="L395">                    .append(versionEndIncluding);</span>
+<span class="fc" id="L396">            textAdded = true;</span>
+        }
+<span class="pc bpc" id="L398" title="1 of 4 branches missed.">        if (versionEndExcluding != null &amp;&amp; !versionEndExcluding.isEmpty()) {</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            if (textAdded) {</span>
+<span class="fc" id="L400">                sb.append(&quot;;&quot;);</span>
+            }
+<span class="fc" id="L402">            sb.append(&quot; versions up to (excluding) &quot;)</span>
+<span class="fc" id="L403">                    .append(versionEndExcluding);</span>
+<span class="fc" id="L404">            textAdded = true;</span>
+        }
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">        if (!vulnerable) {</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            if (textAdded) {</span>
+<span class="nc" id="L408">                sb.append(&quot;;&quot;);</span>
+            }
+<span class="nc" id="L410">            sb.append(&quot; version is NOT VULNERABLE&quot;);</span>
+        }
+<span class="fc" id="L412">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

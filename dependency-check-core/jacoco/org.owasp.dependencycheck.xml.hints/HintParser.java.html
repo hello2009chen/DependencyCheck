@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HintParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.xml.hints</a> &gt; <span class="el_source">HintParser.java</span></div><h1>HintParser.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2016 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.xml.hints;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+
+import org.owasp.dependencycheck.utils.FileUtils;
+import org.owasp.dependencycheck.utils.XmlUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+
+/**
+ * A simple validating parser for XML Hint Rules.
+ *
+ * @author Jeremy Long
+ */
+@NotThreadSafe
+<span class="fc" id="L49">public class HintParser {</span>
+
+    /**
+     * The logger.
+     */
+<span class="fc" id="L54">    private static final Logger LOGGER = LoggerFactory.getLogger(HintParser.class);</span>
+    /**
+     * JAXP Schema Language. Source:
+     * http://docs.oracle.com/javase/tutorial/jaxp/sax/validation.html
+     */
+    public static final String JAXP_SCHEMA_LANGUAGE = &quot;http://java.sun.com/xml/jaxp/properties/schemaLanguage&quot;;
+    /**
+     * W3C XML Schema. Source:
+     * http://docs.oracle.com/javase/tutorial/jaxp/sax/validation.html
+     */
+    public static final String W3C_XML_SCHEMA = &quot;http://www.w3.org/2001/XMLSchema&quot;;
+    /**
+     * JAXP Schema Source. Source:
+     * http://docs.oracle.com/javase/tutorial/jaxp/sax/validation.html
+     */
+    public static final String JAXP_SCHEMA_SOURCE = &quot;http://java.sun.com/xml/jaxp/properties/schemaSource&quot;;
+
+    /**
+     * The schema for the hint XML files.
+     */
+    private static final String HINT_SCHEMA_1_2 = &quot;schema/dependency-hint.1.2.xsd&quot;;
+
+    /**
+     * The schema for the hint XML files.
+     */
+    private static final String HINT_SCHEMA_1_1 = &quot;schema/dependency-hint.1.1.xsd&quot;;
+
+    /**
+     * The schema for the hint XML files.
+     */
+    private static final String HINT_SCHEMA_1_3 = &quot;schema/dependency-hint.1.3.xsd&quot;;
+
+    /**
+     * The hint rules.
+     */
+    private List&lt;HintRule&gt; hintRules;
+    /**
+     * The vendor duplicating hint rules.
+     */
+    private List&lt;VendorDuplicatingHintRule&gt; vendorDuplicatingHintRules;
+
+    /**
+     * Returns the hint rules.
+     *
+     * @return the hint rules
+     */
+    @SuppressWarnings({&quot;EI_EXPOSE_REP&quot;, &quot;EI_EXPOSE_REP2&quot;})
+    public List&lt;HintRule&gt; getHintRules() {
+<span class="fc" id="L102">        return hintRules;</span>
+    }
+
+    /**
+     * Returns the vendor duplicating hint rules.
+     *
+     * @return the vendor duplicating hint rules
+     */
+    public List&lt;VendorDuplicatingHintRule&gt; getVendorDuplicatingHintRules() {
+<span class="fc" id="L111">        return vendorDuplicatingHintRules;</span>
+    }
+
+    /**
+     * Parses the given XML file and returns a list of the hints contained.
+     *
+     * @param file an XML file containing hints
+     * @throws HintParseException thrown if the XML file cannot be parsed
+     */
+    @SuppressFBWarnings(justification = &quot;try with resources will clean up the input stream&quot;, value = {&quot;OBL_UNSATISFIED_OBLIGATION&quot;})
+    public void parseHints(File file) throws HintParseException {
+<span class="fc" id="L122">        try (InputStream fis = new FileInputStream(file)) {</span>
+<span class="fc" id="L123">            parseHints(fis);</span>
+<span class="fc" id="L124">        } catch (SAXException | IOException ex) {</span>
+<span class="fc" id="L125">            LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="fc" id="L126">            throw new HintParseException(ex);</span>
+<span class="fc" id="L127">        }</span>
+<span class="fc" id="L128">    }</span>
+
+    /**
+     * Parses the given XML stream and returns a list of the hint rules
+     * contained.
+     *
+     * @param inputStream an InputStream containing hint rules
+     * @throws HintParseException thrown if the XML cannot be parsed
+     * @throws SAXException thrown if the XML cannot be parsed
+     */
+    public void parseHints(InputStream inputStream) throws HintParseException, SAXException {
+<span class="fc" id="L139">        try (</span>
+<span class="fc" id="L140">                InputStream schemaStream13 = FileUtils.getResourceAsStream(HINT_SCHEMA_1_3);</span>
+<span class="fc" id="L141">                InputStream schemaStream12 = FileUtils.getResourceAsStream(HINT_SCHEMA_1_2);</span>
+<span class="fc" id="L142">                InputStream schemaStream11 = FileUtils.getResourceAsStream(HINT_SCHEMA_1_1)) {</span>
+<span class="fc" id="L143">            final HintHandler handler = new HintHandler();</span>
+<span class="fc" id="L144">            final SAXParser saxParser = XmlUtils.buildSecureSaxParser(schemaStream13, schemaStream12, schemaStream11);</span>
+<span class="fc" id="L145">            final XMLReader xmlReader = saxParser.getXMLReader();</span>
+<span class="fc" id="L146">            xmlReader.setErrorHandler(new HintErrorHandler());</span>
+<span class="fc" id="L147">            xmlReader.setContentHandler(handler);</span>
+<span class="fc" id="L148">            try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {</span>
+<span class="fc" id="L149">                final InputSource in = new InputSource(reader);</span>
+<span class="fc" id="L150">                xmlReader.parse(in);</span>
+<span class="fc" id="L151">                this.hintRules = handler.getHintRules();</span>
+<span class="fc" id="L152">                this.vendorDuplicatingHintRules = handler.getVendorDuplicatingHintRules();</span>
+            }
+<span class="nc" id="L154">        } catch (ParserConfigurationException | FileNotFoundException ex) {</span>
+<span class="nc" id="L155">            LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="nc" id="L156">            throw new HintParseException(ex);</span>
+<span class="fc" id="L157">        } catch (SAXException ex) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (ex.getMessage().contains(&quot;Cannot find the declaration of element 'hints'.&quot;)) {</span>
+<span class="nc" id="L159">                throw ex;</span>
+            } else {
+<span class="fc" id="L161">                LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="fc" id="L162">                throw new HintParseException(ex);</span>
+            }
+<span class="nc" id="L164">        } catch (IOException ex) {</span>
+<span class="nc" id="L165">            LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="nc" id="L166">            throw new HintParseException(ex);</span>
+<span class="fc" id="L167">        }</span>
+<span class="fc" id="L168">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

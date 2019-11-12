@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SSLSocketFactoryEx.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Utils</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.utils</a> &gt; <span class="el_source">SSLSocketFactoryEx.java</span></div><h1>SSLSocketFactoryEx.java</h1><pre class="source lang-java linenums">package org.owasp.dependencycheck.utils;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This class is used to enable additional ciphers used by the SSL Socket. This
+ * is specifically because the NVD stopped supporting TLS 1.0 and Java 6 and 7
+ * clients by default were unable to connect to download the NVD data feeds.
+ * &lt;p&gt;
+ * The following code was copied from
+ * http://stackoverflow.com/questions/1037590/which-cipher-suites-to-enable-for-ssl-socket/23365536#23365536
+ *
+ * @author &lt;a href=&quot;http://stackoverflow.com/users/608639/jww&quot;&gt;jww&lt;/a&gt;
+ * @version $Id: $Id
+ */
+public class SSLSocketFactoryEx extends SSLSocketFactory {
+
+    /**
+     * The Logger for use throughout the class.
+     */
+<span class="fc" id="L37">    private static final Logger LOGGER = LoggerFactory.getLogger(SSLSocketFactoryEx.class);</span>
+
+    /**
+     * The SSL context.
+     */
+    private SSLContext sslCtxt;
+    /**
+     * The protocols.
+     */
+    private String[] protocols;
+    /**
+     * The configured settings.
+     */
+    private final Settings settings;
+
+    /**
+     * Simple boolean flag to prevent logging the protocols repeatedly.
+     */
+<span class="fc" id="L55">    private static boolean protocolsLogged = false;</span>
+
+    /**
+     * Constructs a new SSLSocketFactory.
+     *
+     * @param settings reference to the configured settings
+     * @throws java.security.NoSuchAlgorithmException thrown when an algorithm
+     *                                                is not supported
+     * @throws java.security.KeyManagementException   thrown if initialization
+     *                                                fails
+     */
+<span class="fc" id="L66">    public SSLSocketFactoryEx(Settings settings) throws NoSuchAlgorithmException, KeyManagementException {</span>
+<span class="fc" id="L67">        this.settings = settings;</span>
+<span class="fc" id="L68">        initSSLSocketFactoryEx(null, null, null);</span>
+<span class="fc" id="L69">    }</span>
+
+    /**
+     * Constructs a new SSLSocketFactory.
+     *
+     * @param km       the key manager
+     * @param tm       the trust manager
+     * @param random   secure random
+     * @param settings reference to the configured settings
+     * @throws java.security.NoSuchAlgorithmException thrown when an algorithm
+     *                                                is not supported
+     * @throws java.security.KeyManagementException   thrown if initialization
+     *                                                fails
+     */
+    public SSLSocketFactoryEx(KeyManager[] km, TrustManager[] tm, SecureRandom random, Settings settings)
+<span class="nc" id="L84">            throws NoSuchAlgorithmException, KeyManagementException {</span>
+<span class="nc" id="L85">        this.settings = settings;</span>
+<span class="nc" id="L86">        initSSLSocketFactoryEx(km, tm, random);</span>
+<span class="nc" id="L87">    }</span>
+
+    /**
+     * Constructs a new SSLSocketFactory.
+     *
+     * @param ctx      the SSL context
+     * @param settings reference to the configured settings
+     * @throws java.security.NoSuchAlgorithmException thrown when an algorithm
+     *                                                is not supported
+     * @throws java.security.KeyManagementException   thrown if initialization
+     *                                                fails
+     */
+<span class="nc" id="L99">    public SSLSocketFactoryEx(SSLContext ctx, Settings settings) throws NoSuchAlgorithmException, KeyManagementException {</span>
+<span class="nc" id="L100">        this.settings = settings;</span>
+<span class="nc" id="L101">        initSSLSocketFactoryEx(ctx);</span>
+<span class="nc" id="L102">    }</span>
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Returns the default cipher suites.
+     */
+    @Override
+    public String[] getDefaultCipherSuites() {
+<span class="nc" id="L111">        return sslCtxt.getSocketFactory().getDefaultCipherSuites();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Returns the supported cipher suites.
+     */
+    @Override
+    public String[] getSupportedCipherSuites() {
+<span class="nc" id="L121">        return sslCtxt.getSocketFactory().getSupportedCipherSuites();</span>
+    }
+
+    /**
+     * Returns the default protocols.
+     *
+     * @return the default protocols
+     */
+    public String[] getDefaultProtocols() {
+<span class="nc" id="L130">        return Arrays.copyOf(protocols, protocols.length);</span>
+    }
+
+    /**
+     * Returns the supported protocols.
+     *
+     * @return the supported protocols
+     */
+    public String[] getSupportedProtocols() {
+<span class="nc" id="L139">        return Arrays.copyOf(protocols, protocols.length);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Creates an SSL Socket.
+     */
+    @Override
+    public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+<span class="fc" id="L149">        final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="fc" id="L150">        final SSLSocket ss = (SSLSocket) factory.createSocket(s, host, port, autoClose);</span>
+
+<span class="fc" id="L152">        ss.setEnabledProtocols(protocols);</span>
+
+<span class="fc" id="L154">        return ss;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Creates a new SSL Socket.
+     */
+    @Override
+    public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+<span class="nc" id="L164">        final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="nc" id="L165">        final SSLSocket ss = (SSLSocket) factory.createSocket(address, port, localAddress, localPort);</span>
+
+<span class="nc" id="L167">        ss.setEnabledProtocols(protocols);</span>
+
+<span class="nc" id="L169">        return ss;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Creates a new SSL Socket.
+     */
+    @Override
+    public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
+<span class="nc" id="L179">        final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="nc" id="L180">        final SSLSocket ss = (SSLSocket) factory.createSocket(host, port, localHost, localPort);</span>
+
+<span class="nc" id="L182">        ss.setEnabledProtocols(protocols);</span>
+
+<span class="nc" id="L184">        return ss;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Creates a new SSL Socket.
+     */
+    @Override
+    public Socket createSocket(InetAddress host, int port) throws IOException {
+<span class="nc" id="L194">        final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="nc" id="L195">        final SSLSocket ss = (SSLSocket) factory.createSocket(host, port);</span>
+
+<span class="nc" id="L197">        ss.setEnabledProtocols(protocols);</span>
+
+<span class="nc" id="L199">        return ss;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;
+     * Creates a new SSL Socket.
+     */
+    @Override
+    public Socket createSocket(String host, int port) throws IOException {
+<span class="nc" id="L209">        final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="nc" id="L210">        final SSLSocket ss = (SSLSocket) factory.createSocket(host, port);</span>
+
+<span class="nc" id="L212">        ss.setEnabledProtocols(protocols);</span>
+
+<span class="nc" id="L214">        return ss;</span>
+    }
+
+    /**
+     * Initializes the SSL Socket Factory Extension.
+     *
+     * @param km     the key managers
+     * @param tm     the trust managers
+     * @param random the secure random number generator
+     * @throws NoSuchAlgorithmException thrown when an algorithm is not
+     *                                  supported
+     * @throws KeyManagementException   thrown if initialization fails
+     */
+    private void initSSLSocketFactoryEx(KeyManager[] km, TrustManager[] tm, SecureRandom random)
+            throws NoSuchAlgorithmException, KeyManagementException {
+<span class="fc" id="L229">        sslCtxt = SSLContext.getInstance(&quot;TLS&quot;);</span>
+<span class="fc" id="L230">        sslCtxt.init(km, tm, random);</span>
+
+<span class="fc" id="L232">        protocols = getProtocolList();</span>
+<span class="fc" id="L233">    }</span>
+
+    /**
+     * Initializes the SSL Socket Factory Extension.
+     *
+     * @param ctx the SSL context
+     * @throws NoSuchAlgorithmException thrown when an algorithm is not
+     *                                  supported
+     * @throws KeyManagementException   thrown if initialization fails
+     */
+    private void initSSLSocketFactoryEx(SSLContext ctx)
+            throws NoSuchAlgorithmException, KeyManagementException {
+<span class="nc" id="L245">        sslCtxt = ctx;</span>
+<span class="nc" id="L246">        protocols = getProtocolList();</span>
+<span class="nc" id="L247">    }</span>
+
+    /**
+     * Returns the protocol list.
+     *
+     * @return the protocol list
+     */
+    @SuppressWarnings(&quot;StringSplitter&quot;)
+    protected String[] getProtocolList() {
+<span class="fc" id="L256">        SSLSocket socket = null;</span>
+        final String[] availableProtocols;
+<span class="fc" id="L258">        final String[] preferredProtocols = settings.getString(</span>
+                Settings.KEYS.DOWNLOADER_TLS_PROTOCOL_LIST,
+                &quot;TLSv1.1,TLSv1.2,TLSv1.3&quot;)
+<span class="fc" id="L261">                .split(&quot;,&quot;);</span>
+        try {
+<span class="fc" id="L263">            final SSLSocketFactory factory = sslCtxt.getSocketFactory();</span>
+<span class="fc" id="L264">            socket = (SSLSocket) factory.createSocket();</span>
+
+<span class="fc" id="L266">            availableProtocols = socket.getSupportedProtocols();</span>
+<span class="fc" id="L267">            Arrays.sort(availableProtocols);</span>
+<span class="pc bpc" id="L268" title="3 of 4 branches missed.">            if (LOGGER.isDebugEnabled() &amp;&amp; !protocolsLogged) {</span>
+<span class="nc" id="L269">                protocolsLogged = true;</span>
+<span class="nc" id="L270">                LOGGER.debug(&quot;Available Protocols:&quot;);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">                for (String p : availableProtocols) {</span>
+<span class="nc" id="L272">                    LOGGER.debug(p);</span>
+                }
+            }
+<span class="nc" id="L275">        } catch (Exception ex) {</span>
+<span class="nc" id="L276">            LOGGER.debug(&quot;Error getting protocol list, using TLSv1.1-1.3&quot;, ex);</span>
+<span class="nc" id="L277">            return new String[]{&quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.3&quot;};</span>
+        } finally {
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">            if (socket != null) {</span>
+                try {
+<span class="fc" id="L281">                    socket.close();</span>
+<span class="nc" id="L282">                } catch (IOException ex) {</span>
+<span class="nc" id="L283">                    LOGGER.trace(&quot;Error closing socket&quot;, ex);</span>
+<span class="fc" id="L284">                }</span>
+            }
+        }
+
+<span class="fc" id="L288">        final List&lt;String&gt; aa = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        for (String preferredProtocol : preferredProtocols) {</span>
+<span class="fc" id="L290">            final int idx = Arrays.binarySearch(availableProtocols, preferredProtocol);</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">            if (idx &gt;= 0) {</span>
+<span class="fc" id="L292">                aa.add(preferredProtocol);</span>
+            }
+        }
+
+<span class="fc" id="L296">        return aa.toArray(new String[0]);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

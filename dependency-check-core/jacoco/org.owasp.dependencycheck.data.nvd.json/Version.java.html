@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Version.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">Version.java</span></div><h1>Version.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import java.util.ArrayList;
+import java.util.List;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+<span class="fc" id="L9">public class Version {</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+<span class="fc" id="L16">    @SerializedName(&quot;version_data&quot;)</span>
+    @Expose
+    private List&lt;VersionDatum&gt; versionData = new ArrayList&lt;VersionDatum&gt;();
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public List&lt;VersionDatum&gt; getVersionData() {
+<span class="nc" id="L26">        return versionData;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setVersionData(List&lt;VersionDatum&gt; versionData) {
+<span class="nc" id="L35">        this.versionData = versionData;</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L40">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L41">        sb.append(Version.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L42">        sb.append(&quot;versionData&quot;);</span>
+<span class="nc" id="L43">        sb.append('=');</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        sb.append(((this.versionData == null)?&quot;&lt;null&gt;&quot;:this.versionData));</span>
+<span class="nc" id="L45">        sb.append(',');</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L47">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L49">            sb.append(']');</span>
+        }
+<span class="nc" id="L51">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L56">        int result = 1;</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        result = ((result* 31)+((this.versionData == null)? 0 :this.versionData.hashCode()));</span>
+<span class="nc" id="L58">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L64">            return true;</span>
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if ((other instanceof Version) == false) {</span>
+<span class="nc" id="L67">            return false;</span>
+        }
+<span class="nc" id="L69">        Version rhs = ((Version) other);</span>
+<span class="nc bnc" id="L70" title="All 6 branches missed.">        return ((this.versionData == rhs.versionData)||((this.versionData!= null)&amp;&amp;this.versionData.equals(rhs.versionData)));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,1258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Engine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck</a> &gt; <span class="el_source">Engine.java</span></div><h1>Engine.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2012 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck;
+
+import com.google.common.collect.ImmutableList;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.owasp.dependencycheck.analyzer.AnalysisPhase;
+import org.owasp.dependencycheck.analyzer.Analyzer;
+import org.owasp.dependencycheck.analyzer.AnalyzerService;
+import org.owasp.dependencycheck.analyzer.FileTypeAnalyzer;
+import org.owasp.dependencycheck.data.nvdcve.ConnectionFactory;
+import org.owasp.dependencycheck.data.nvdcve.CveDB;
+import org.owasp.dependencycheck.data.nvdcve.DatabaseException;
+import org.owasp.dependencycheck.data.nvdcve.DatabaseProperties;
+import org.owasp.dependencycheck.data.update.CachedWebDataSource;
+import org.owasp.dependencycheck.data.update.UpdateService;
+import org.owasp.dependencycheck.data.update.exception.UpdateException;
+import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.exception.ExceptionCollection;
+import org.owasp.dependencycheck.exception.InitializationException;
+import org.owasp.dependencycheck.exception.NoDataException;
+import org.owasp.dependencycheck.exception.ReportException;
+import org.owasp.dependencycheck.reporting.ReportGenerator;
+import org.owasp.dependencycheck.utils.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.annotation.concurrent.NotThreadSafe;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.jcs.JCS;
+
+import org.owasp.dependencycheck.exception.H2DBLockException;
+import org.owasp.dependencycheck.utils.H2DBLock;
+
+//CSOFF: AvoidStarImport
+import static org.owasp.dependencycheck.analyzer.AnalysisPhase.*;
+//CSON: AvoidStarImport
+
+/**
+ * Scans files, directories, etc. for Dependencies. Analyzers are loaded and
+ * used to process the files found by the scan, if a file is encountered and an
+ * Analyzer is associated with the file type then the file is turned into a
+ * dependency.
+ *
+ * @author Jeremy Long
+ */
+@NotThreadSafe
+public class Engine implements FileFilter, AutoCloseable {
+
+    /**
+     * {@link Engine} execution modes.
+     */
+<span class="fc" id="L91">    public enum Mode {</span>
+        /**
+         * In evidence collection mode the {@link Engine} only collects evidence
+         * from the scan targets, and doesn't require a database.
+         */
+<span class="fc" id="L96">        EVIDENCE_COLLECTION(</span>
+                false,
+                INITIAL,
+                PRE_INFORMATION_COLLECTION,
+                INFORMATION_COLLECTION,
+                POST_INFORMATION_COLLECTION
+        ),
+        /**
+         * In evidence processing mode the {@link Engine} processes the evidence
+         * collected using the {@link #EVIDENCE_COLLECTION} mode. Dependencies
+         * should be injected into the {@link Engine} using
+         * {@link Engine#setDependencies(List)}.
+         */
+<span class="fc" id="L109">        EVIDENCE_PROCESSING(</span>
+                true,
+                PRE_IDENTIFIER_ANALYSIS,
+                IDENTIFIER_ANALYSIS,
+                POST_IDENTIFIER_ANALYSIS,
+                PRE_FINDING_ANALYSIS,
+                FINDING_ANALYSIS,
+                POST_FINDING_ANALYSIS,
+                FINDING_ANALYSIS_PHASE2,
+                FINAL
+        ),
+        /**
+         * In standalone mode the {@link Engine} will collect and process
+         * evidence in a single execution.
+         */
+<span class="fc" id="L124">        STANDALONE(true, AnalysisPhase.values());</span>
+
+        /**
+         * Whether the database is required in this mode.
+         */
+        private final boolean databaseRequired;
+        /**
+         * The analysis phases included in the mode.
+         */
+        private final ImmutableList&lt;AnalysisPhase&gt; phases;
+
+        /**
+         * Returns true if the database is required; otherwise false.
+         *
+         * @return whether or not the database is required
+         */
+        private boolean isDatabaseRequired() {
+<span class="fc" id="L141">            return databaseRequired;</span>
+        }
+
+        /**
+         * Returns the phases for this mode.
+         *
+         * @return the phases for this mode
+         */
+        public ImmutableList&lt;AnalysisPhase&gt; getPhases() {
+<span class="fc" id="L150">            return phases;</span>
+        }
+
+        /**
+         * Constructs a new mode.
+         *
+         * @param databaseRequired if the database is required for the mode
+         * @param phases the analysis phases to include in the mode
+         */
+<span class="fc" id="L159">        Mode(boolean databaseRequired, AnalysisPhase... phases) {</span>
+<span class="fc" id="L160">            this.databaseRequired = databaseRequired;</span>
+            //must use Guava 11.0.1 API as of 3/30/2019 due to Jenkins compatability issues
+            //this.phases = Arrays.stream(phases).collect(ImmutableList.toImmutableList());
+<span class="fc" id="L163">            this.phases = new ImmutableList.Builder&lt;AnalysisPhase&gt;()</span>
+<span class="fc" id="L164">                    .add(phases)</span>
+<span class="fc" id="L165">                    .build();</span>
+<span class="fc" id="L166">        }</span>
+    }
+
+    /**
+     * The list of dependencies.
+     */
+<span class="fc" id="L172">    private final List&lt;Dependency&gt; dependencies = Collections.synchronizedList(new ArrayList&lt;&gt;());</span>
+    /**
+     * The external view of the dependency list.
+     */
+<span class="fc" id="L176">    private Dependency[] dependenciesExternalView = null;</span>
+    /**
+     * A Map of analyzers grouped by Analysis phase.
+     */
+<span class="fc" id="L180">    private final Map&lt;AnalysisPhase, List&lt;Analyzer&gt;&gt; analyzers = new EnumMap&lt;&gt;(AnalysisPhase.class);</span>
+
+    /**
+     * A Map of analyzers grouped by Analysis phase.
+     */
+<span class="fc" id="L185">    private final Set&lt;FileTypeAnalyzer&gt; fileTypeAnalyzers = new HashSet&lt;&gt;();</span>
+
+    /**
+     * The engine execution mode indicating it will either collect evidence or
+     * process evidence or both.
+     */
+    private final Mode mode;
+
+    /**
+     * The ClassLoader to use when dynamically loading Analyzer and Update
+     * services.
+     */
+    private final ClassLoader serviceClassLoader;
+    /**
+     * A reference to the database.
+     */
+<span class="fc" id="L201">    private CveDB database = null;</span>
+    /**
+     * The Logger for use throughout the class.
+     */
+<span class="fc" id="L205">    private static final Logger LOGGER = LoggerFactory.getLogger(Engine.class);</span>
+    /**
+     * The configured settings.
+     */
+    private final Settings settings;
+
+    /**
+     * Creates a new {@link Mode#STANDALONE} Engine.
+     *
+     * @param settings reference to the configured settings
+     */
+    public Engine(@NotNull final Settings settings) {
+<span class="fc" id="L217">        this(Mode.STANDALONE, settings);</span>
+<span class="fc" id="L218">    }</span>
+
+    /**
+     * Creates a new Engine.
+     *
+     * @param mode the mode of operation
+     * @param settings reference to the configured settings
+     */
+    public Engine(@NotNull final Mode mode, @NotNull final Settings settings) {
+<span class="fc" id="L227">        this(Thread.currentThread().getContextClassLoader(), mode, settings);</span>
+<span class="fc" id="L228">    }</span>
+
+    /**
+     * Creates a new {@link Mode#STANDALONE} Engine.
+     *
+     * @param serviceClassLoader a reference the class loader being used
+     * @param settings reference to the configured settings
+     */
+    public Engine(@NotNull final ClassLoader serviceClassLoader, @NotNull final Settings settings) {
+<span class="nc" id="L237">        this(serviceClassLoader, Mode.STANDALONE, settings);</span>
+<span class="nc" id="L238">    }</span>
+
+    /**
+     * Creates a new Engine.
+     *
+     * @param serviceClassLoader a reference the class loader being used
+     * @param mode the mode of the engine
+     * @param settings reference to the configured settings
+     */
+<span class="fc" id="L247">    public Engine(@NotNull final ClassLoader serviceClassLoader, @NotNull final Mode mode, @NotNull final Settings settings) {</span>
+<span class="fc" id="L248">        this.settings = settings;</span>
+<span class="fc" id="L249">        this.serviceClassLoader = serviceClassLoader;</span>
+<span class="fc" id="L250">        this.mode = mode;</span>
+<span class="fc" id="L251">        initializeEngine();</span>
+<span class="fc" id="L252">    }</span>
+
+    /**
+     * Creates a new Engine using the specified classloader to dynamically load
+     * Analyzer and Update services.
+     *
+     * @throws DatabaseException thrown if there is an error connecting to the
+     * database
+     */
+    protected final void initializeEngine() {
+<span class="fc" id="L262">        loadAnalyzers();</span>
+<span class="fc" id="L263">    }</span>
+
+    /**
+     * Properly cleans up resources allocated during analysis.
+     */
+    @Override
+    public void close() {
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (mode.isDatabaseRequired()) {</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if (database != null) {</span>
+<span class="fc" id="L272">                database.close();</span>
+<span class="fc" id="L273">                database = null;</span>
+            }
+        }
+<span class="fc" id="L276">        JCS.shutdown();</span>
+<span class="fc" id="L277">    }</span>
+
+    /**
+     * Loads the analyzers specified in the configuration file (or system
+     * properties).
+     */
+    private void loadAnalyzers() {
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        if (!analyzers.isEmpty()) {</span>
+<span class="nc" id="L285">            return;</span>
+        }
+<span class="fc" id="L287">        mode.getPhases().forEach((phase) -&gt; analyzers.put(phase, new ArrayList&lt;&gt;()));</span>
+<span class="fc" id="L288">        final AnalyzerService service = new AnalyzerService(serviceClassLoader, settings);</span>
+<span class="fc" id="L289">        final List&lt;Analyzer&gt; iterator = service.getAnalyzers(mode.getPhases());</span>
+<span class="fc" id="L290">        iterator.forEach((a) -&gt; {</span>
+<span class="fc" id="L291">            a.initialize(this.settings);</span>
+<span class="fc" id="L292">            analyzers.get(a.getAnalysisPhase()).add(a);</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">            if (a instanceof FileTypeAnalyzer) {</span>
+<span class="fc" id="L294">                this.fileTypeAnalyzers.add((FileTypeAnalyzer) a);</span>
+            }
+<span class="fc" id="L296">        });</span>
+<span class="fc" id="L297">    }</span>
+
+    /**
+     * Get the List of the analyzers for a specific phase of analysis.
+     *
+     * @param phase the phase to get the configured analyzers.
+     * @return the analyzers loaded
+     */
+    public List&lt;Analyzer&gt; getAnalyzers(AnalysisPhase phase) {
+<span class="fc" id="L306">        return analyzers.get(phase);</span>
+    }
+
+    /**
+     * Adds a dependency.
+     *
+     * @param dependency the dependency to add
+     */
+    public synchronized void addDependency(Dependency dependency) {
+<span class="fc" id="L315">        dependencies.add(dependency);</span>
+<span class="fc" id="L316">        dependenciesExternalView = null;</span>
+<span class="fc" id="L317">    }</span>
+
+    /**
+     * Sorts the dependency list.
+     */
+    public synchronized void sortDependencies() {
+        //TODO - is this actually necassary????
+//        Collections.sort(dependencies);
+//        dependenciesExternalView = null;
+<span class="fc" id="L326">    }</span>
+
+    /**
+     * Removes the dependency.
+     *
+     * @param dependency the dependency to remove.
+     */
+    public synchronized void removeDependency(@NotNull final Dependency dependency) {
+<span class="fc" id="L334">        dependencies.remove(dependency);</span>
+<span class="fc" id="L335">        dependenciesExternalView = null;</span>
+<span class="fc" id="L336">    }</span>
+
+    /**
+     * Returns a copy of the dependencies as an array.
+     *
+     * @return the dependencies identified
+     */
+    @SuppressFBWarnings(justification = &quot;This is the intended external view of the dependencies&quot;, value = {&quot;EI_EXPOSE_REP&quot;})
+    public synchronized Dependency[] getDependencies() {
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        if (dependenciesExternalView == null) {</span>
+<span class="fc" id="L346">            dependenciesExternalView = dependencies.toArray(new Dependency[0]);</span>
+        }
+<span class="fc" id="L348">        return dependenciesExternalView;</span>
+    }
+
+    /**
+     * Sets the dependencies.
+     *
+     * @param dependencies the dependencies
+     */
+    public synchronized void setDependencies(@NotNull final List&lt;Dependency&gt; dependencies) {
+<span class="fc" id="L357">        this.dependencies.clear();</span>
+<span class="fc" id="L358">        this.dependencies.addAll(dependencies);</span>
+<span class="fc" id="L359">        dependenciesExternalView = null;</span>
+<span class="fc" id="L360">    }</span>
+
+    /**
+     * Scans an array of files or directories. If a directory is specified, it
+     * will be scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param paths an array of paths to files or directories to be analyzed
+     * @return the list of dependencies scanned
+     * @since v0.3.2.5
+     */
+    public List&lt;Dependency&gt; scan(@NotNull final String[] paths) {
+<span class="nc" id="L372">        return scan(paths, null);</span>
+    }
+
+    /**
+     * Scans an array of files or directories. If a directory is specified, it
+     * will be scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param paths an array of paths to files or directories to be analyzed
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of dependencies scanned
+     * @since v1.4.4
+     */
+    public List&lt;Dependency&gt; scan(@NotNull final String[] paths, @Nullable final String projectReference) {
+<span class="nc" id="L387">        final List&lt;Dependency&gt; deps = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">        for (String path : paths) {</span>
+<span class="nc" id="L389">            final List&lt;Dependency&gt; d = scan(path, projectReference);</span>
+<span class="nc bnc" id="L390" title="All 2 branches missed.">            if (d != null) {</span>
+<span class="nc" id="L391">                deps.addAll(d);</span>
+            }
+        }
+<span class="nc" id="L394">        return deps;</span>
+    }
+
+    /**
+     * Scans a given file or directory. If a directory is specified, it will be
+     * scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param path the path to a file or directory to be analyzed
+     * @return the list of dependencies scanned
+     */
+    public List&lt;Dependency&gt; scan(@NotNull final String path) {
+<span class="fc" id="L406">        return scan(path, null);</span>
+    }
+
+    /**
+     * Scans a given file or directory. If a directory is specified, it will be
+     * scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param path the path to a file or directory to be analyzed
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of dependencies scanned
+     * @since v1.4.4
+     */
+    public List&lt;Dependency&gt; scan(@NotNull final String path, String projectReference) {
+<span class="fc" id="L421">        final File file = new File(path);</span>
+<span class="fc" id="L422">        return scan(file, projectReference);</span>
+    }
+
+    /**
+     * Scans an array of files or directories. If a directory is specified, it
+     * will be scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param files an array of paths to files or directories to be analyzed.
+     * @return the list of dependencies
+     * @since v0.3.2.5
+     */
+    public List&lt;Dependency&gt; scan(File[] files) {
+<span class="nc" id="L435">        return scan(files, null);</span>
+    }
+
+    /**
+     * Scans an array of files or directories. If a directory is specified, it
+     * will be scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param files an array of paths to files or directories to be analyzed.
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of dependencies
+     * @since v1.4.4
+     */
+    public List&lt;Dependency&gt; scan(File[] files, String projectReference) {
+<span class="nc" id="L450">        final List&lt;Dependency&gt; deps = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">        for (File file : files) {</span>
+<span class="nc" id="L452">            final List&lt;Dependency&gt; d = scan(file, projectReference);</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">            if (d != null) {</span>
+<span class="nc" id="L454">                deps.addAll(d);</span>
+            }
+        }
+<span class="nc" id="L457">        return deps;</span>
+    }
+
+    /**
+     * Scans a collection of files or directories. If a directory is specified,
+     * it will be scanned recursively. Any dependencies identified are added to
+     * the dependency collection.
+     *
+     * @param files a set of paths to files or directories to be analyzed
+     * @return the list of dependencies scanned
+     * @since v0.3.2.5
+     */
+    public List&lt;Dependency&gt; scan(Collection&lt;File&gt; files) {
+<span class="nc" id="L470">        return scan(files, null);</span>
+    }
+
+    /**
+     * Scans a collection of files or directories. If a directory is specified,
+     * it will be scanned recursively. Any dependencies identified are added to
+     * the dependency collection.
+     *
+     * @param files a set of paths to files or directories to be analyzed
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of dependencies scanned
+     * @since v1.4.4
+     */
+    public List&lt;Dependency&gt; scan(Collection&lt;File&gt; files, String projectReference) {
+<span class="nc" id="L485">        final List&lt;Dependency&gt; deps = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L486">        files.stream().map((file) -&gt; scan(file, projectReference))</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                .filter((d) -&gt; (d != null))</span>
+<span class="nc" id="L488">                .forEach((d) -&gt; deps.addAll(d));</span>
+<span class="nc" id="L489">        return deps;</span>
+    }
+
+    /**
+     * Scans a given file or directory. If a directory is specified, it will be
+     * scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param file the path to a file or directory to be analyzed
+     * @return the list of dependencies scanned
+     * @since v0.3.2.4
+     */
+    public List&lt;Dependency&gt; scan(File file) {
+<span class="fc" id="L502">        return scan(file, null);</span>
+    }
+
+    /**
+     * Scans a given file or directory. If a directory is specified, it will be
+     * scanned recursively. Any dependencies identified are added to the
+     * dependency collection.
+     *
+     * @param file the path to a file or directory to be analyzed
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of dependencies scanned
+     * @since v1.4.4
+     */
+    @Nullable
+    public List&lt;Dependency&gt; scan(@NotNull final File file, String projectReference) {
+<span class="pc bpc" id="L518" title="1 of 2 branches missed.">        if (file.exists()) {</span>
+<span class="fc bfc" id="L519" title="All 2 branches covered.">            if (file.isDirectory()) {</span>
+<span class="fc" id="L520">                return scanDirectory(file, projectReference);</span>
+            } else {
+<span class="fc" id="L522">                final Dependency d = scanFile(file, projectReference);</span>
+<span class="fc bfc" id="L523" title="All 2 branches covered.">                if (d != null) {</span>
+<span class="fc" id="L524">                    final List&lt;Dependency&gt; deps = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L525">                    deps.add(d);</span>
+<span class="fc" id="L526">                    return deps;</span>
+                }
+            }
+        }
+<span class="fc" id="L530">        return null;</span>
+    }
+
+    /**
+     * Recursively scans files and directories. Any dependencies identified are
+     * added to the dependency collection.
+     *
+     * @param dir the directory to scan
+     * @return the list of Dependency objects scanned
+     */
+    protected List&lt;Dependency&gt; scanDirectory(File dir) {
+<span class="nc" id="L541">        return scanDirectory(dir, null);</span>
+    }
+
+    /**
+     * Recursively scans files and directories. Any dependencies identified are
+     * added to the dependency collection.
+     *
+     * @param dir the directory to scan
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the list of Dependency objects scanned
+     * @since v1.4.4
+     */
+    protected List&lt;Dependency&gt; scanDirectory(@NotNull final File dir, @Nullable final String projectReference) {
+<span class="fc" id="L555">        final File[] files = dir.listFiles();</span>
+<span class="fc" id="L556">        final List&lt;Dependency&gt; deps = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L557" title="1 of 2 branches missed.">        if (files != null) {</span>
+<span class="fc bfc" id="L558" title="All 2 branches covered.">            for (File f : files) {</span>
+<span class="fc bfc" id="L559" title="All 2 branches covered.">                if (f.isDirectory()) {</span>
+<span class="fc" id="L560">                    final List&lt;Dependency&gt; d = scanDirectory(f, projectReference);</span>
+<span class="pc bpc" id="L561" title="1 of 2 branches missed.">                    if (d != null) {</span>
+<span class="fc" id="L562">                        deps.addAll(d);</span>
+                    }
+<span class="fc" id="L564">                } else {</span>
+<span class="fc" id="L565">                    final Dependency d = scanFile(f, projectReference);</span>
+<span class="fc bfc" id="L566" title="All 2 branches covered.">                    if (d != null) {</span>
+<span class="fc" id="L567">                        deps.add(d);</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L572">        return deps;</span>
+    }
+
+    /**
+     * Scans a specified file. If a dependency is identified it is added to the
+     * dependency collection.
+     *
+     * @param file The file to scan
+     * @return the scanned dependency
+     */
+    protected Dependency scanFile(@NotNull final File file) {
+<span class="fc" id="L583">        return scanFile(file, null);</span>
+    }
+
+    /**
+     * Scans a specified file. If a dependency is identified it is added to the
+     * dependency collection.
+     *
+     * @param file The file to scan
+     * @param projectReference the name of the project or scope in which the
+     * dependency was identified
+     * @return the scanned dependency
+     * @since v1.4.4
+     */
+    protected synchronized Dependency scanFile(@NotNull final File file, @Nullable final String projectReference) {
+<span class="fc" id="L597">        Dependency dependency = null;</span>
+<span class="pc bpc" id="L598" title="1 of 2 branches missed.">        if (file.isFile()) {</span>
+<span class="fc bfc" id="L599" title="All 2 branches covered.">            if (accept(file)) {</span>
+<span class="fc" id="L600">                dependency = new Dependency(file);</span>
+<span class="pc bpc" id="L601" title="1 of 2 branches missed.">                if (projectReference != null) {</span>
+<span class="nc" id="L602">                    dependency.addProjectReference(projectReference);</span>
+                }
+<span class="fc" id="L604">                final String sha1 = dependency.getSha1sum();</span>
+<span class="fc" id="L605">                boolean found = false;</span>
+
+<span class="pc bpc" id="L607" title="1 of 2 branches missed.">                if (sha1 != null) {</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">                    for (Dependency existing : dependencies) {</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">                        if (sha1.equals(existing.getSha1sum())) {</span>
+<span class="fc" id="L610">                            found = true;</span>
+<span class="pc bpc" id="L611" title="1 of 2 branches missed.">                            if (projectReference != null) {</span>
+<span class="nc" id="L612">                                existing.addProjectReference(projectReference);</span>
+                            }
+<span class="pc bpc" id="L614" title="2 of 4 branches missed.">                            if (existing.getActualFilePath() != null &amp;&amp; dependency.getActualFilePath() != null</span>
+<span class="fc bfc" id="L615" title="All 2 branches covered.">                                    &amp;&amp; !existing.getActualFilePath().equals(dependency.getActualFilePath())) {</span>
+<span class="fc" id="L616">                                existing.addRelatedDependency(dependency);</span>
+                            } else {
+<span class="fc" id="L618">                                dependency = existing;</span>
+                            }
+<span class="fc" id="L620">                            break;</span>
+                        }
+<span class="fc" id="L622">                    }</span>
+                }
+<span class="fc bfc" id="L624" title="All 2 branches covered.">                if (!found) {</span>
+<span class="fc" id="L625">                    dependencies.add(dependency);</span>
+<span class="fc" id="L626">                    dependenciesExternalView = null;</span>
+                }
+<span class="fc" id="L628">            }</span>
+        } else {
+<span class="nc" id="L630">            LOGGER.debug(&quot;Path passed to scanFile(File) is not a file that can be scanned by dependency-check: {}. Skipping the file.&quot;, file);</span>
+        }
+<span class="fc" id="L632">        return dependency;</span>
+    }
+
+    /**
+     * Runs the analyzers against all of the dependencies. Since the mutable
+     * dependencies list is exposed via {@link #getDependencies()}, this method
+     * iterates over a copy of the dependencies list. Thus, the potential for
+     * {@link java.util.ConcurrentModificationException}s is avoided, and
+     * analyzers may safely add or remove entries from the dependencies list.
+     * &lt;p&gt;
+     * Every effort is made to complete analysis on the dependencies. In some
+     * cases an exception will occur with part of the analysis being performed
+     * which may not affect the entire analysis. If an exception occurs it will
+     * be included in the thrown exception collection.
+     *
+     * @throws ExceptionCollection a collections of any exceptions that occurred
+     * during analysis
+     */
+    public void analyzeDependencies() throws ExceptionCollection {
+<span class="fc" id="L651">        final List&lt;Throwable&gt; exceptions = Collections.synchronizedList(new ArrayList&lt;&gt;());</span>
+
+<span class="fc" id="L653">        initializeAndUpdateDatabase(exceptions);</span>
+
+        //need to ensure that data exists
+        try {
+<span class="fc" id="L657">            ensureDataExists();</span>
+<span class="nc" id="L658">        } catch (NoDataException ex) {</span>
+<span class="nc" id="L659">            throwFatalExceptionCollection(&quot;Unable to continue dependency-check analysis.&quot;, ex, exceptions);</span>
+<span class="fc" id="L660">        }</span>
+<span class="fc" id="L661">        LOGGER.info(&quot;\n\nDependency-Check is an open source tool performing a best effort analysis of 3rd party dependencies; false positives and &quot;</span>
+                + &quot;false negatives may exist in the analysis performed by the tool. Use of the tool and the reporting provided constitutes &quot;
+                + &quot;acceptance for use in an AS IS condition, and there are NO warranties, implied or otherwise, with regard to the analysis &quot;
+                + &quot;or its use. Any use of the tool and the reporting provided is at the user’s risk. In no event shall the copyright holder &quot;
+                + &quot;or OWASP be held liable for any damages whatsoever arising out of or in connection with the use of this tool, the analysis &quot;
+                + &quot;performed, or the resulting report.\n\n&quot;);
+<span class="fc" id="L667">        LOGGER.debug(&quot;\n----------------------------------------------------\nBEGIN ANALYSIS\n----------------------------------------------------&quot;);</span>
+<span class="fc" id="L668">        LOGGER.info(&quot;Analysis Started&quot;);</span>
+<span class="fc" id="L669">        final long analysisStart = System.currentTimeMillis();</span>
+
+        // analysis phases
+<span class="fc bfc" id="L672" title="All 2 branches covered.">        for (AnalysisPhase phase : mode.getPhases()) {</span>
+<span class="fc" id="L673">            final List&lt;Analyzer&gt; analyzerList = analyzers.get(phase);</span>
+
+<span class="fc bfc" id="L675" title="All 2 branches covered.">            for (final Analyzer analyzer : analyzerList) {</span>
+<span class="fc" id="L676">                final long analyzerStart = System.currentTimeMillis();</span>
+                try {
+<span class="fc" id="L678">                    initializeAnalyzer(analyzer);</span>
+<span class="fc" id="L679">                } catch (InitializationException ex) {</span>
+<span class="fc" id="L680">                    exceptions.add(ex);</span>
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">                    if (ex.isFatal()) {</span>
+<span class="fc" id="L682">                        continue;</span>
+                    }
+<span class="fc" id="L684">                }</span>
+
+<span class="fc bfc" id="L686" title="All 2 branches covered.">                if (analyzer.isEnabled()) {</span>
+<span class="fc" id="L687">                    executeAnalysisTasks(analyzer, exceptions);</span>
+
+<span class="fc" id="L689">                    final long analyzerDurationMillis = System.currentTimeMillis() - analyzerStart;</span>
+<span class="fc" id="L690">                    final long analyzerDurationSeconds = TimeUnit.MILLISECONDS.toSeconds(analyzerDurationMillis);</span>
+<span class="fc" id="L691">                    LOGGER.info(&quot;Finished {} ({} seconds)&quot;, analyzer.getName(), analyzerDurationSeconds);</span>
+<span class="fc" id="L692">                } else {</span>
+<span class="fc" id="L693">                    LOGGER.debug(&quot;Skipping {} (not enabled)&quot;, analyzer.getName());</span>
+                }
+<span class="fc" id="L695">            }</span>
+<span class="fc" id="L696">        }</span>
+<span class="fc" id="L697">        mode.getPhases().stream()</span>
+<span class="fc" id="L698">                .map((phase) -&gt; analyzers.get(phase))</span>
+<span class="fc" id="L699">                .forEach((analyzerList) -&gt; analyzerList.forEach((a) -&gt; closeAnalyzer(a)));</span>
+
+<span class="fc" id="L701">        LOGGER.debug(&quot;\n----------------------------------------------------\nEND ANALYSIS\n----------------------------------------------------&quot;);</span>
+<span class="fc" id="L702">        final long analysisDurationSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - analysisStart);</span>
+<span class="fc" id="L703">        LOGGER.info(&quot;Analysis Complete ({} seconds)&quot;, analysisDurationSeconds);</span>
+<span class="fc bfc" id="L704" title="All 2 branches covered.">        if (exceptions.size() &gt; 0) {</span>
+<span class="fc" id="L705">            throw new ExceptionCollection(exceptions);</span>
+        }
+<span class="fc" id="L707">    }</span>
+
+    /**
+     * Performs any necessary updates and initializes the database.
+     *
+     * @param exceptions a collection to store non-fatal exceptions
+     * @throws ExceptionCollection thrown if fatal exceptions occur
+     */
+    private void initializeAndUpdateDatabase(@NotNull final List&lt;Throwable&gt; exceptions) throws ExceptionCollection {
+<span class="fc bfc" id="L716" title="All 2 branches covered.">        if (!mode.isDatabaseRequired()) {</span>
+<span class="fc" id="L717">            return;</span>
+        }
+        final boolean autoUpdate;
+<span class="fc" id="L720">        autoUpdate = settings.getBoolean(Settings.KEYS.AUTO_UPDATE, true);</span>
+<span class="fc bfc" id="L721" title="All 2 branches covered.">        if (autoUpdate) {</span>
+            try {
+<span class="fc" id="L723">                doUpdates(true);</span>
+<span class="nc" id="L724">            } catch (UpdateException ex) {</span>
+<span class="nc" id="L725">                exceptions.add(ex);</span>
+<span class="nc" id="L726">                LOGGER.warn(&quot;Unable to update 1 or more Cached Web DataSource, using local &quot;</span>
+                        + &quot;data instead. Results may not include recent vulnerabilities.&quot;);
+<span class="nc" id="L728">                LOGGER.debug(&quot;Update Error&quot;, ex);</span>
+<span class="nc" id="L729">            } catch (DatabaseException ex) {</span>
+<span class="nc" id="L730">                throwFatalDatabaseException(ex, exceptions);</span>
+<span class="pc" id="L731">            }</span>
+        } else {
+            try {
+<span class="pc bpc" id="L734" title="2 of 4 branches missed.">                if (ConnectionFactory.isH2Connection(settings) &amp;&amp; !ConnectionFactory.h2DataFileExists(settings)) {</span>
+<span class="nc" id="L735">                    throw new ExceptionCollection(new NoDataException(&quot;Autoupdate is disabled and the database does not exist&quot;), true);</span>
+                } else {
+<span class="fc" id="L737">                    openDatabase(true, true);</span>
+                }
+<span class="nc" id="L739">            } catch (IOException ex) {</span>
+<span class="nc" id="L740">                throw new ExceptionCollection(new DatabaseException(&quot;Autoupdate is disabled and unable to connect to the database&quot;), true);</span>
+<span class="nc" id="L741">            } catch (DatabaseException ex) {</span>
+<span class="nc" id="L742">                throwFatalDatabaseException(ex, exceptions);</span>
+<span class="fc" id="L743">            }</span>
+        }
+<span class="fc" id="L745">    }</span>
+
+    /**
+     * Utility method to throw a fatal database exception.
+     *
+     * @param ex the exception that was caught
+     * @param exceptions the exception collection
+     * @throws ExceptionCollection the collection of exceptions is always thrown
+     * as a fatal exception
+     */
+    private void throwFatalDatabaseException(DatabaseException ex, final List&lt;Throwable&gt; exceptions) throws ExceptionCollection {
+        final String msg;
+<span class="nc bnc" id="L757" title="All 4 branches missed.">        if (ex.getMessage().contains(&quot;Unable to connect&quot;) &amp;&amp; ConnectionFactory.isH2Connection(settings)) {</span>
+<span class="nc" id="L758">            msg = &quot;Unable to connect to the database - if this error persists it may be &quot;</span>
+                    + &quot;due to a corrupt database. Consider running `purge` to delete the existing database&quot;;
+        } else {
+<span class="nc" id="L761">            msg = &quot;Unable to connect to the dependency-check database&quot;;</span>
+        }
+<span class="nc" id="L763">        exceptions.add(new DatabaseException(msg, ex));</span>
+<span class="nc" id="L764">        throw new ExceptionCollection(exceptions, true);</span>
+    }
+
+    /**
+     * Executes executes the analyzer using multiple threads.
+     *
+     * @param exceptions a collection of exceptions that occurred during
+     * analysis
+     * @param analyzer the analyzer to execute
+     * @throws ExceptionCollection thrown if exceptions occurred during analysis
+     */
+    protected void executeAnalysisTasks(@NotNull final Analyzer analyzer, List&lt;Throwable&gt; exceptions) throws ExceptionCollection {
+<span class="fc" id="L776">        LOGGER.debug(&quot;Starting {}&quot;, analyzer.getName());</span>
+<span class="fc" id="L777">        final List&lt;AnalysisTask&gt; analysisTasks = getAnalysisTasks(analyzer, exceptions);</span>
+<span class="fc" id="L778">        final ExecutorService executorService = getExecutorService(analyzer);</span>
+
+        try {
+<span class="fc" id="L781">            final int timeout = settings.getInt(Settings.KEYS.ANALYSIS_TIMEOUT, 20);</span>
+<span class="fc" id="L782">            final List&lt;Future&lt;Void&gt;&gt; results = executorService.invokeAll(analysisTasks, timeout, TimeUnit.MINUTES);</span>
+
+            // ensure there was no exception during execution
+<span class="fc bfc" id="L785" title="All 2 branches covered.">            for (Future&lt;Void&gt; result : results) {</span>
+                try {
+<span class="fc" id="L787">                    result.get();</span>
+<span class="fc" id="L788">                } catch (ExecutionException e) {</span>
+<span class="nc" id="L789">                    throwFatalExceptionCollection(&quot;Analysis task failed with a fatal exception.&quot;, e, exceptions);</span>
+<span class="nc" id="L790">                } catch (CancellationException e) {</span>
+<span class="nc" id="L791">                    throwFatalExceptionCollection(&quot;Analysis task was cancelled.&quot;, e, exceptions);</span>
+<span class="pc" id="L792">                }</span>
+<span class="fc" id="L793">            }</span>
+<span class="nc" id="L794">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L795">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L796">            throwFatalExceptionCollection(&quot;Analysis has been interrupted.&quot;, e, exceptions);</span>
+        } finally {
+<span class="fc" id="L798">            executorService.shutdown();</span>
+        }
+<span class="fc" id="L800">    }</span>
+
+    /**
+     * Returns the analysis tasks for the dependencies.
+     *
+     * @param analyzer the analyzer to create tasks for
+     * @param exceptions the collection of exceptions to collect
+     * @return a collection of analysis tasks
+     */
+    protected synchronized List&lt;AnalysisTask&gt; getAnalysisTasks(Analyzer analyzer, List&lt;Throwable&gt; exceptions) {
+<span class="fc" id="L810">        final List&lt;AnalysisTask&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L811">        dependencies.stream().map((dependency) -&gt; new AnalysisTask(analyzer, dependency, this, exceptions)).forEach((task) -&gt; result.add(task));</span>
+<span class="fc" id="L812">        return result;</span>
+    }
+
+    /**
+     * Returns the executor service for a given analyzer.
+     *
+     * @param analyzer the analyzer to obtain an executor
+     * @return the executor service
+     */
+    protected ExecutorService getExecutorService(Analyzer analyzer) {
+<span class="fc bfc" id="L822" title="All 2 branches covered.">        if (analyzer.supportsParallelProcessing()) {</span>
+<span class="fc" id="L823">            final int maximumNumberOfThreads = Runtime.getRuntime().availableProcessors();</span>
+<span class="fc" id="L824">            LOGGER.debug(&quot;Parallel processing with up to {} threads: {}.&quot;, maximumNumberOfThreads, analyzer.getName());</span>
+<span class="fc" id="L825">            return Executors.newFixedThreadPool(maximumNumberOfThreads);</span>
+        } else {
+<span class="fc" id="L827">            LOGGER.debug(&quot;Parallel processing is not supported: {}.&quot;, analyzer.getName());</span>
+<span class="fc" id="L828">            return Executors.newSingleThreadExecutor();</span>
+        }
+    }
+
+    /**
+     * Initializes the given analyzer.
+     *
+     * @param analyzer the analyzer to prepare
+     * @throws InitializationException thrown when there is a problem
+     * initializing the analyzer
+     */
+    protected void initializeAnalyzer(@NotNull final Analyzer analyzer) throws InitializationException {
+        try {
+<span class="fc" id="L841">            LOGGER.debug(&quot;Initializing {}&quot;, analyzer.getName());</span>
+<span class="fc" id="L842">            analyzer.prepare(this);</span>
+<span class="fc" id="L843">        } catch (InitializationException ex) {</span>
+<span class="fc" id="L844">            LOGGER.error(&quot;Exception occurred initializing {}.&quot;, analyzer.getName());</span>
+<span class="fc" id="L845">            LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="pc bpc" id="L846" title="1 of 2 branches missed.">            if (ex.isFatal()) {</span>
+                try {
+<span class="fc" id="L848">                    analyzer.close();</span>
+<span class="nc" id="L849">                } catch (Throwable ex1) {</span>
+<span class="nc" id="L850">                    LOGGER.trace(&quot;&quot;, ex1);</span>
+<span class="fc" id="L851">                }</span>
+            }
+<span class="fc" id="L853">            throw ex;</span>
+<span class="nc" id="L854">        } catch (Throwable ex) {</span>
+<span class="nc" id="L855">            LOGGER.error(&quot;Unexpected exception occurred initializing {}.&quot;, analyzer.getName());</span>
+<span class="nc" id="L856">            LOGGER.debug(&quot;&quot;, ex);</span>
+            try {
+<span class="nc" id="L858">                analyzer.close();</span>
+<span class="nc" id="L859">            } catch (Throwable ex1) {</span>
+<span class="nc" id="L860">                LOGGER.trace(&quot;&quot;, ex1);</span>
+<span class="nc" id="L861">            }</span>
+<span class="nc" id="L862">            throw new InitializationException(&quot;Unexpected Exception&quot;, ex);</span>
+<span class="fc" id="L863">        }</span>
+<span class="fc" id="L864">    }</span>
+
+    /**
+     * Closes the given analyzer.
+     *
+     * @param analyzer the analyzer to close
+     */
+    protected void closeAnalyzer(@NotNull final Analyzer analyzer) {
+<span class="fc" id="L872">        LOGGER.debug(&quot;Closing Analyzer '{}'&quot;, analyzer.getName());</span>
+        try {
+<span class="fc" id="L874">            analyzer.close();</span>
+<span class="nc" id="L875">        } catch (Throwable ex) {</span>
+<span class="nc" id="L876">            LOGGER.trace(&quot;&quot;, ex);</span>
+<span class="fc" id="L877">        }</span>
+<span class="fc" id="L878">    }</span>
+
+    /**
+     * Cycles through the cached web data sources and calls update on all of
+     * them.
+     *
+     * @throws UpdateException thrown if the operation fails
+     * @throws DatabaseException if the operation fails due to a local database
+     * failure
+     */
+    public void doUpdates() throws UpdateException, DatabaseException {
+<span class="nc" id="L889">        doUpdates(false);</span>
+<span class="nc" id="L890">    }</span>
+
+    /**
+     * Cycles through the cached web data sources and calls update on all of
+     * them.
+     *
+     * @param remainOpen whether or not the database connection should remain
+     * open
+     * @throws UpdateException thrown if the operation fails
+     * @throws DatabaseException if the operation fails due to a local database
+     * failure
+     */
+    public void doUpdates(boolean remainOpen) throws UpdateException, DatabaseException {
+<span class="pc bpc" id="L903" title="1 of 2 branches missed.">        if (mode.isDatabaseRequired()) {</span>
+<span class="fc" id="L904">            H2DBLock dblock = null;</span>
+            try {
+<span class="pc bpc" id="L906" title="1 of 2 branches missed.">                if (ConnectionFactory.isH2Connection(settings)) {</span>
+<span class="fc" id="L907">                    dblock = new H2DBLock(settings);</span>
+<span class="fc" id="L908">                    LOGGER.debug(&quot;locking for update&quot;);</span>
+<span class="fc" id="L909">                    dblock.lock();</span>
+                }
+                //lock is not needed as we already have the lock held
+<span class="fc" id="L912">                openDatabase(false, false);</span>
+<span class="fc" id="L913">                LOGGER.info(&quot;Checking for updates&quot;);</span>
+<span class="fc" id="L914">                final long updateStart = System.currentTimeMillis();</span>
+<span class="fc" id="L915">                final UpdateService service = new UpdateService(serviceClassLoader);</span>
+<span class="fc" id="L916">                final Iterator&lt;CachedWebDataSource&gt; iterator = service.getDataSources();</span>
+<span class="fc" id="L917">                boolean dbUpdatesMade = false;</span>
+<span class="fc" id="L918">                UpdateException updateException = null;</span>
+<span class="fc bfc" id="L919" title="All 2 branches covered.">                while (iterator.hasNext()) {</span>
+                    try {
+<span class="fc" id="L921">                        final CachedWebDataSource source = iterator.next();</span>
+<span class="fc" id="L922">                        dbUpdatesMade |= source.update(this);</span>
+<span class="nc" id="L923">                    } catch (UpdateException ex) {</span>
+<span class="nc" id="L924">                        updateException = ex;</span>
+<span class="nc" id="L925">                        LOGGER.error(ex.getMessage(), ex);</span>
+<span class="pc" id="L926">                    }</span>
+                }
+<span class="fc bfc" id="L928" title="All 2 branches covered.">                if (dbUpdatesMade) {</span>
+<span class="fc" id="L929">                    database.defrag();</span>
+                }
+<span class="fc" id="L931">                database.close();</span>
+<span class="fc" id="L932">                database = null;</span>
+<span class="pc bpc" id="L933" title="1 of 2 branches missed.">                if (updateException != null) {</span>
+<span class="nc" id="L934">                    throw updateException;</span>
+                }
+<span class="fc" id="L936">                LOGGER.info(&quot;Check for updates complete ({} ms)&quot;, System.currentTimeMillis() - updateStart);</span>
+<span class="pc bpc" id="L937" title="1 of 2 branches missed.">                if (remainOpen) {</span>
+                    //lock is not needed as we already have the lock held
+<span class="fc" id="L939">                    openDatabase(true, false);</span>
+                }
+<span class="nc" id="L941">            } catch (H2DBLockException ex) {</span>
+<span class="nc" id="L942">                throw new UpdateException(&quot;Unable to obtain an exclusive lock on the H2 database to perform updates&quot;, ex);</span>
+            } finally {
+<span class="pc bpc" id="L944" title="1 of 2 branches missed.">                if (dblock != null) {</span>
+<span class="fc" id="L945">                    dblock.release();</span>
+                }
+            }
+<span class="fc" id="L948">        } else {</span>
+<span class="nc" id="L949">            LOGGER.info(&quot;Skipping update check in evidence collection mode.&quot;);</span>
+        }
+<span class="fc" id="L951">    }</span>
+
+    /**
+     * Purges the cached web data sources.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if the purge was successful; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    public boolean purge() {
+<span class="nc" id="L960">        boolean result = true;</span>
+<span class="nc" id="L961">        final UpdateService service = new UpdateService(serviceClassLoader);</span>
+<span class="nc" id="L962">        final Iterator&lt;CachedWebDataSource&gt; iterator = service.getDataSources();</span>
+<span class="nc bnc" id="L963" title="All 2 branches missed.">        while (iterator.hasNext()) {</span>
+<span class="nc" id="L964">            result &amp;= iterator.next().purge(this);</span>
+        }
+        try {
+<span class="nc" id="L967">            final File cache = new File(settings.getDataDirectory(), &quot;cache&quot;);</span>
+<span class="nc bnc" id="L968" title="All 2 branches missed.">            if (cache.exists()) {</span>
+<span class="nc bnc" id="L969" title="All 2 branches missed.">                if (FileUtils.deleteQuietly(cache)) {</span>
+<span class="nc" id="L970">                    LOGGER.info(&quot;Cache directory purged&quot;);</span>
+                }
+            }
+<span class="nc" id="L973">        } catch (IOException ex) {</span>
+<span class="nc" id="L974">            throw new RuntimeException(ex);</span>
+<span class="nc" id="L975">        }</span>
+        try {
+<span class="nc" id="L977">            final File cache = new File(settings.getDataDirectory(), &quot;oss_cache&quot;);</span>
+<span class="nc bnc" id="L978" title="All 2 branches missed.">            if (cache.exists()) {</span>
+<span class="nc bnc" id="L979" title="All 2 branches missed.">                if (FileUtils.deleteQuietly(cache)) {</span>
+<span class="nc" id="L980">                    LOGGER.info(&quot;OSS Cache directory purged&quot;);</span>
+                }
+            }
+<span class="nc" id="L983">        } catch (IOException ex) {</span>
+<span class="nc" id="L984">            throw new RuntimeException(ex);</span>
+<span class="nc" id="L985">        }</span>
+
+<span class="nc" id="L987">        return result;</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * This method is only public for unit/integration testing. This method
+     * should not be called by any integration that uses
+     * dependency-check-core.&lt;/p&gt;
+     * &lt;p&gt;
+     * Opens the database connection.&lt;/p&gt;
+     *
+     * @throws DatabaseException if the database connection could not be created
+     */
+    public void openDatabase() throws DatabaseException {
+<span class="fc" id="L1001">        openDatabase(false, true);</span>
+<span class="fc" id="L1002">    }</span>
+
+    /**
+     * &lt;p&gt;
+     * This method is only public for unit/integration testing. This method
+     * should not be called by any integration that uses
+     * dependency-check-core.&lt;/p&gt;
+     * &lt;p&gt;
+     * Opens the database connection; if readOnly is true a copy of the database
+     * will be made.&lt;/p&gt;
+     *
+     * @param readOnly whether or not the database connection should be readonly
+     * @param lockRequired whether or not a lock needs to be acquired when
+     * opening the database
+     * @throws DatabaseException if the database connection could not be created
+     */
+    public void openDatabase(boolean readOnly, boolean lockRequired) throws DatabaseException {
+<span class="fc bfc" id="L1019" title="All 4 branches covered.">        if (mode.isDatabaseRequired() &amp;&amp; database == null) {</span>
+<span class="fc" id="L1020">            H2DBLock lock = null;</span>
+            try {
+<span class="pc bpc" id="L1022" title="1 of 4 branches missed.">                if (lockRequired &amp;&amp; ConnectionFactory.isH2Connection(settings)) {</span>
+<span class="fc" id="L1023">                    lock = new H2DBLock(settings);</span>
+<span class="fc" id="L1024">                    lock.lock();</span>
+                }
+<span class="fc bfc" id="L1026" title="All 2 branches covered.">                if (readOnly</span>
+<span class="pc bpc" id="L1027" title="1 of 2 branches missed.">                        &amp;&amp; ConnectionFactory.isH2Connection(settings)</span>
+<span class="pc bpc" id="L1028" title="1 of 2 branches missed.">                        &amp;&amp; settings.getString(Settings.KEYS.DB_CONNECTION_STRING).contains(&quot;file:%s&quot;)) {</span>
+<span class="fc" id="L1029">                    final File db = ConnectionFactory.getH2DataFile(settings);</span>
+<span class="pc bpc" id="L1030" title="1 of 2 branches missed.">                    if (db.isFile()) {</span>
+<span class="fc" id="L1031">                        final File temp = settings.getTempDirectory();</span>
+<span class="fc" id="L1032">                        final File tempDB = new File(temp, db.getName());</span>
+<span class="fc" id="L1033">                        LOGGER.debug(&quot;copying database {} to {}&quot;, db.toPath(), temp.toPath());</span>
+<span class="fc" id="L1034">                        Files.copy(db.toPath(), tempDB.toPath());</span>
+<span class="fc" id="L1035">                        settings.setString(Settings.KEYS.H2_DATA_DIRECTORY, temp.getPath());</span>
+<span class="fc" id="L1036">                        final String connStr = settings.getString(Settings.KEYS.DB_CONNECTION_STRING);</span>
+<span class="pc bpc" id="L1037" title="1 of 2 branches missed.">                        if (!connStr.contains(&quot;ACCESS_MODE_DATA&quot;)) {</span>
+<span class="fc" id="L1038">                            settings.setString(Settings.KEYS.DB_CONNECTION_STRING, connStr + &quot;ACCESS_MODE_DATA=r&quot;);</span>
+                        }
+<span class="fc" id="L1040">                        database = new CveDB(settings);</span>
+<span class="fc" id="L1041">                    } else {</span>
+<span class="nc" id="L1042">                        throw new DatabaseException(&quot;Unable to open database - configured database file does not exist: &quot; + db.toString());</span>
+                    }
+<span class="fc" id="L1044">                } else {</span>
+<span class="fc" id="L1045">                    database = new CveDB(settings);</span>
+                }
+<span class="nc" id="L1047">            } catch (IOException ex) {</span>
+<span class="nc bnc" id="L1048" title="All 2 branches missed.">                if (readOnly) {</span>
+<span class="nc" id="L1049">                    throw new DatabaseException(&quot;Unable to open database in read only mode&quot;, ex);</span>
+                } else {
+<span class="nc" id="L1051">                    throw new DatabaseException(&quot;Unable to open database&quot;, ex);</span>
+                }
+<span class="nc" id="L1053">            } catch (H2DBLockException ex) {</span>
+<span class="nc" id="L1054">                throw new DatabaseException(&quot;Failed to obtain lock - unable to open database&quot;, ex);</span>
+            } finally {
+<span class="fc bfc" id="L1056" title="All 2 branches covered.">                if (lock != null) {</span>
+<span class="fc" id="L1057">                    lock.release();</span>
+                }
+            }
+        }
+<span class="fc" id="L1061">    }</span>
+
+    /**
+     * Returns a reference to the database.
+     *
+     * @return a reference to the database
+     */
+    public CveDB getDatabase() {
+<span class="fc" id="L1069">        return this.database;</span>
+    }
+
+    /**
+     * Returns a full list of all of the analyzers. This is useful for reporting
+     * which analyzers where used.
+     *
+     * @return a list of Analyzers
+     */
+    @NotNull
+    public List&lt;Analyzer&gt; getAnalyzers() {
+<span class="fc" id="L1080">        final List&lt;Analyzer&gt; ret = new ArrayList&lt;&gt;();</span>
+        //insteae of forEach - we can just do a collect
+<span class="fc" id="L1082">        mode.getPhases().stream().map((phase) -&gt; analyzers.get(phase)).forEachOrdered((analyzerList) -&gt; {</span>
+<span class="fc" id="L1083">            ret.addAll(analyzerList);</span>
+<span class="fc" id="L1084">        });</span>
+<span class="fc" id="L1085">        return ret;</span>
+    }
+
+    /**
+     * Checks all analyzers to see if an extension is supported.
+     *
+     * @param file a file extension
+     * @return true or false depending on whether or not the file extension is
+     * supported
+     */
+    @Override
+    public boolean accept(@Nullable final File file) {
+<span class="pc bpc" id="L1097" title="1 of 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L1098">            return false;</span>
+        }
+        /* note, we can't break early on this loop as the analyzers need to know if
+        they have files to work on prior to initialization */
+<span class="fc bfc" id="L1102" title="All 4 branches covered.">        return this.fileTypeAnalyzers.stream().map((a) -&gt; a.accept(file)).reduce(false, (accumulator, result) -&gt; accumulator || result);</span>
+    }
+
+    /**
+     * Returns the set of file type analyzers.
+     *
+     * @return the set of file type analyzers
+     */
+    public Set&lt;FileTypeAnalyzer&gt; getFileTypeAnalyzers() {
+<span class="nc" id="L1111">        return this.fileTypeAnalyzers;</span>
+    }
+
+    /**
+     * Returns the configured settings.
+     *
+     * @return the configured settings
+     */
+    public Settings getSettings() {
+<span class="fc" id="L1120">        return settings;</span>
+    }
+
+    /**
+     * Returns the mode of the engine.
+     *
+     * @return the mode of the engine
+     */
+    public Mode getMode() {
+<span class="nc" id="L1129">        return mode;</span>
+    }
+
+    /**
+     * Adds a file type analyzer. This has been added solely to assist in unit
+     * testing the Engine.
+     *
+     * @param fta the file type analyzer to add
+     */
+    protected void addFileTypeAnalyzer(@NotNull final FileTypeAnalyzer fta) {
+<span class="fc" id="L1139">        this.fileTypeAnalyzers.add(fta);</span>
+<span class="fc" id="L1140">    }</span>
+
+    /**
+     * Checks the CPE Index to ensure documents exists. If none exist a
+     * NoDataException is thrown.
+     *
+     * @throws NoDataException thrown if no data exists in the CPE Index
+     */
+    private void ensureDataExists() throws NoDataException {
+<span class="pc bpc" id="L1149" title="2 of 6 branches missed.">        if (mode.isDatabaseRequired() &amp;&amp; (database == null || !database.dataExists())) {</span>
+<span class="nc" id="L1150">            throw new NoDataException(&quot;No documents exist&quot;);</span>
+        }
+<span class="fc" id="L1152">    }</span>
+
+    /**
+     * Constructs and throws a fatal exception collection.
+     *
+     * @param message the exception message
+     * @param throwable the cause
+     * @param exceptions a collection of exception to include
+     * @throws ExceptionCollection a collection of exceptions that occurred
+     * during analysis
+     */
+    private void throwFatalExceptionCollection(String message, @NotNull final Throwable throwable,
+            @NotNull final List&lt;Throwable&gt; exceptions) throws ExceptionCollection {
+<span class="fc" id="L1165">        LOGGER.error(message);</span>
+<span class="fc" id="L1166">        LOGGER.debug(&quot;&quot;, throwable);</span>
+<span class="fc" id="L1167">        exceptions.add(throwable);</span>
+<span class="fc" id="L1168">        throw new ExceptionCollection(exceptions, true);</span>
+    }
+
+    //CSOFF: LineLength
+    /**
+     * Writes the report to the given output directory.
+     *
+     * @param applicationName the name of the application/project
+     * @param outputDir the path to the output directory (can include the full
+     * file name if the format is not ALL)
+     * @param format the report format (ALL, HTML, CSV, JSON, etc.)
+     * @throws ReportException thrown if there is an error generating the report
+     * @deprecated use
+     * {@link #writeReports(java.lang.String, java.io.File, java.lang.String, org.owasp.dependencycheck.exception.ExceptionCollection)}
+     */
+    @Deprecated
+    public void writeReports(String applicationName, File outputDir, String format) throws ReportException {
+<span class="fc" id="L1185">        writeReports(applicationName, null, null, null, outputDir, format, null);</span>
+<span class="fc" id="L1186">    }</span>
+    //CSON: LineLength
+
+    /**
+     * Writes the report to the given output directory.
+     *
+     * @param applicationName the name of the application/project
+     * @param outputDir the path to the output directory (can include the full
+     * file name if the format is not ALL)
+     * @param format the report format (ALL, HTML, CSV, JSON, etc.)
+     * @param exceptions a collection of exceptions that may have occurred
+     * during the analysis
+     * @throws ReportException thrown if there is an error generating the report
+     */
+    public void writeReports(String applicationName, File outputDir, String format, ExceptionCollection exceptions) throws ReportException {
+<span class="fc" id="L1201">        writeReports(applicationName, null, null, null, outputDir, format, exceptions);</span>
+<span class="fc" id="L1202">    }</span>
+
+    //CSOFF: LineLength
+    /**
+     * Writes the report to the given output directory.
+     *
+     * @param applicationName the name of the application/project
+     * @param groupId the Maven groupId
+     * @param artifactId the Maven artifactId
+     * @param version the Maven version
+     * @param outputDir the path to the output directory (can include the full
+     * file name if the format is not ALL)
+     * @param format the report format (ALL, HTML, CSV, JSON, etc.)
+     * @throws ReportException thrown if there is an error generating the report
+     * @deprecated use
+     * {@link #writeReports(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.io.File, java.lang.String, org.owasp.dependencycheck.exception.ExceptionCollection)}
+     */
+    @Deprecated
+    public synchronized void writeReports(String applicationName, @Nullable final String groupId,
+            @Nullable final String artifactId, @Nullable final String version,
+            @NotNull final File outputDir, String format) throws ReportException {
+<span class="nc" id="L1223">        writeReports(applicationName, groupId, artifactId, version, outputDir, format, null);</span>
+<span class="nc" id="L1224">    }</span>
+    //CSON: LineLength
+
+    /**
+     * Writes the report to the given output directory.
+     *
+     * @param applicationName the name of the application/project
+     * @param groupId the Maven groupId
+     * @param artifactId the Maven artifactId
+     * @param version the Maven version
+     * @param outputDir the path to the output directory (can include the full
+     * file name if the format is not ALL)
+     * @param format the report format (ALL, HTML, CSV, JSON, etc.)
+     * @param exceptions a collection of exceptions that may have occurred
+     * during the analysis
+     * @throws ReportException thrown if there is an error generating the report
+     */
+    public synchronized void writeReports(String applicationName, @Nullable final String groupId,
+            @Nullable final String artifactId, @Nullable final String version,
+            @NotNull final File outputDir, String format, ExceptionCollection exceptions) throws ReportException {
+<span class="pc bpc" id="L1244" title="1 of 2 branches missed.">        if (mode == Mode.EVIDENCE_COLLECTION) {</span>
+<span class="nc" id="L1245">            throw new UnsupportedOperationException(&quot;Cannot generate report in evidence collection mode.&quot;);</span>
+        }
+<span class="fc" id="L1247">        final DatabaseProperties prop = database.getDatabaseProperties();</span>
+<span class="fc" id="L1248">        final ReportGenerator r = new ReportGenerator(applicationName, groupId, artifactId, version,</span>
+<span class="fc" id="L1249">                dependencies, getAnalyzers(), prop, settings, exceptions);</span>
+        try {
+<span class="fc" id="L1251">            r.write(outputDir.getAbsolutePath(), format);</span>
+<span class="nc" id="L1252">        } catch (ReportException ex) {</span>
+<span class="nc" id="L1253">            final String msg = String.format(&quot;Error generating the report for %s&quot;, applicationName);</span>
+<span class="nc" id="L1254">            throw new ReportException(msg, ex);</span>
+<span class="fc" id="L1255">        }</span>
+<span class="fc" id="L1256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

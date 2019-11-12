@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Product__1.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">Product__1.java</span></div><h1>Product__1.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+<span class="fc" id="L7">public class Product__1 {</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;product_name&quot;)
+    @Expose
+    private String productName;
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;version&quot;)
+    @Expose
+    private Version version;
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public String getProductName() {
+<span class="nc" id="L32">        return productName;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setProductName(String productName) {
+<span class="nc" id="L41">        this.productName = productName;</span>
+<span class="nc" id="L42">    }</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public Version getVersion() {
+<span class="nc" id="L50">        return version;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setVersion(Version version) {
+<span class="nc" id="L59">        this.version = version;</span>
+<span class="nc" id="L60">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L64">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L65">        sb.append(Product__1 .class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L66">        sb.append(&quot;productName&quot;);</span>
+<span class="nc" id="L67">        sb.append('=');</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        sb.append(((this.productName == null)?&quot;&lt;null&gt;&quot;:this.productName));</span>
+<span class="nc" id="L69">        sb.append(',');</span>
+<span class="nc" id="L70">        sb.append(&quot;version&quot;);</span>
+<span class="nc" id="L71">        sb.append('=');</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        sb.append(((this.version == null)?&quot;&lt;null&gt;&quot;:this.version));</span>
+<span class="nc" id="L73">        sb.append(',');</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L75">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L77">            sb.append(']');</span>
+        }
+<span class="nc" id="L79">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L84">        int result = 1;</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        result = ((result* 31)+((this.version == null)? 0 :this.version.hashCode()));</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        result = ((result* 31)+((this.productName == null)? 0 :this.productName.hashCode()));</span>
+<span class="nc" id="L87">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L93">            return true;</span>
+        }
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if ((other instanceof Product__1) == false) {</span>
+<span class="nc" id="L96">            return false;</span>
+        }
+<span class="nc" id="L98">        Product__1 rhs = ((Product__1) other);</span>
+<span class="nc bnc" id="L99" title="All 12 branches missed.">        return (((this.version == rhs.version)||((this.version!= null)&amp;&amp;this.version.equals(rhs.version)))&amp;&amp;((this.productName == rhs.productName)||((this.productName!= null)&amp;&amp;this.productName.equals(rhs.productName))));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetireJSDataSource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.update</a> &gt; <span class="el_source">RetireJSDataSource.java</span></div><h1>RetireJSDataSource.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2018 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.data.update;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import javax.annotation.concurrent.ThreadSafe;
+
+import org.owasp.dependencycheck.Engine;
+import org.owasp.dependencycheck.data.update.exception.UpdateException;
+import org.owasp.dependencycheck.utils.Downloader;
+import org.owasp.dependencycheck.utils.ResourceNotFoundException;
+import org.owasp.dependencycheck.utils.Settings;
+import org.owasp.dependencycheck.utils.TooManyRequestsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Checks the gh-pages dependency-check site to determine the current released
+ * version number. If the released version number is greater than the running
+ * version number a warning is printed recommending that an upgrade be
+ * performed.
+ *
+ * @author Jeremy Long
+ */
+@ThreadSafe
+public class RetireJSDataSource implements CachedWebDataSource {
+
+    /**
+     * Static logger.
+     */
+<span class="fc" id="L49">    private static final Logger LOGGER = LoggerFactory.getLogger(RetireJSDataSource.class);</span>
+    /**
+     * The property key indicating when the last update occurred.
+     */
+    public static final String RETIREJS_UPDATED_ON = &quot;RetireJSUpdatedOn&quot;;
+    /**
+     * The configured settings.
+     */
+    private Settings settings;
+    /**
+     * The default URL to the RetireJS JavaScript repository.
+     */
+    private static final String DEFAULT_JS_URL = &quot;https://raw.githubusercontent.com/Retirejs/retire.js/master/repository/jsrepository.json&quot;;
+
+    /**
+     * Constructs a new engine version check utility for testing.
+     *
+     * @param settings the configured settings
+     */
+<span class="nc" id="L68">    protected RetireJSDataSource(Settings settings) {</span>
+<span class="nc" id="L69">        this.settings = settings;</span>
+<span class="nc" id="L70">    }</span>
+
+    /**
+     * Constructs a new engine version check utility.
+     */
+<span class="fc" id="L75">    public RetireJSDataSource() {</span>
+<span class="fc" id="L76">    }</span>
+
+    /**
+     * Downloads the current RetireJS data source.
+     *
+     * @return returns false as no updates are made to the database that would
+     * require compaction
+     * @throws UpdateException thrown if the update failed
+     */
+    @Override
+    public boolean update(Engine engine) throws UpdateException {
+<span class="fc" id="L87">        this.settings = engine.getSettings();</span>
+<span class="fc" id="L88">        String url = null;</span>
+        try {
+<span class="fc" id="L90">            final boolean autoupdate = settings.getBoolean(Settings.KEYS.AUTO_UPDATE, true);</span>
+<span class="fc" id="L91">            final boolean enabled = settings.getBoolean(Settings.KEYS.ANALYZER_RETIREJS_ENABLED, true);</span>
+<span class="fc" id="L92">            final File repoFile = new File(settings.getDataDirectory(), &quot;jsrepository.json&quot;);</span>
+<span class="pc bpc" id="L93" title="2 of 6 branches missed.">            final boolean proceed = enabled &amp;&amp; autoupdate &amp;&amp; shouldUpdagte(repoFile);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (proceed) {</span>
+<span class="fc" id="L95">                LOGGER.debug(&quot;Begin RetireJS Update&quot;);</span>
+<span class="fc" id="L96">                url = settings.getString(Settings.KEYS.ANALYZER_RETIREJS_REPO_JS_URL, DEFAULT_JS_URL);</span>
+<span class="fc" id="L97">                initializeRetireJsRepo(settings, new URL(url));</span>
+            }
+<span class="nc" id="L99">        } catch (MalformedURLException ex) {</span>
+<span class="nc" id="L100">            throw new UpdateException(String.format(&quot;Inavlid URL for RetireJS repository (%s)&quot;, url), ex);</span>
+<span class="nc" id="L101">        } catch (IOException ex) {</span>
+<span class="nc" id="L102">            throw new UpdateException(&quot;Unable to get the data directory&quot;, ex);</span>
+<span class="fc" id="L103">        }</span>
+<span class="fc" id="L104">        return false;</span>
+    }
+
+    /**
+     * Determines if the we should update the RetireJS database.
+     *
+     * @param repo the retire JS repository.
+     * @return &lt;code&gt;true&lt;/code&gt; if an updated to the RetireJS database should
+     * be performed; otherwise &lt;code&gt;false&lt;/code&gt;
+     * @throws NumberFormatException thrown if an invalid value is contained in
+     * the database properties
+     */
+    protected boolean shouldUpdagte(File repo) throws NumberFormatException {
+<span class="fc" id="L117">        boolean proceed = true;</span>
+<span class="pc bpc" id="L118" title="1 of 4 branches missed.">        if (repo != null &amp;&amp; repo.isFile()) {</span>
+<span class="fc" id="L119">            final int validForHours = settings.getInt(Settings.KEYS.ANALYZER_RETIREJS_REPO_VALID_FOR_HOURS, 0);</span>
+<span class="fc" id="L120">            final long lastUpdatedOn = repo.lastModified();</span>
+<span class="fc" id="L121">            final long now = System.currentTimeMillis();</span>
+<span class="fc" id="L122">            LOGGER.debug(&quot;Last updated: {}&quot;, lastUpdatedOn);</span>
+<span class="fc" id="L123">            LOGGER.debug(&quot;Now: {}&quot;, now);</span>
+<span class="fc" id="L124">            final long msValid = validForHours * 60L * 60L * 1000L;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            proceed = (now - lastUpdatedOn) &gt; msValid;</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (!proceed) {</span>
+<span class="fc" id="L127">                LOGGER.info(&quot;Skipping RetireJS update since last update was within {} hours.&quot;, validForHours);</span>
+            }
+        }
+<span class="fc" id="L130">        return proceed;</span>
+    }
+
+    /**
+     * Initializes the local RetireJS repository
+     *
+     * @param settings a reference to the dependency-check settings
+     * @param repoUrl the URL to the RetireJS repo to use
+     * @throws UpdateException thrown if there is an exception during
+     * initialization
+     */
+    private void initializeRetireJsRepo(Settings settings, URL repoUrl) throws UpdateException {
+        try {
+<span class="fc" id="L143">            final File dataDir = settings.getDataDirectory();</span>
+
+<span class="fc" id="L145">            LOGGER.debug(&quot;RetireJS Repo URL: {}&quot;, repoUrl.toExternalForm());</span>
+<span class="fc" id="L146">            final Downloader downloader = new Downloader(settings);</span>
+<span class="fc" id="L147">            final String filename = repoUrl.getFile().substring(repoUrl.getFile().lastIndexOf(&quot;/&quot;) + 1);</span>
+<span class="fc" id="L148">            final File repoFile = new File(dataDir, filename);</span>
+<span class="fc" id="L149">            downloader.fetchFile(repoUrl, repoFile);</span>
+<span class="nc" id="L150">        } catch (IOException | TooManyRequestsException | ResourceNotFoundException ex) {</span>
+<span class="nc" id="L151">            throw new UpdateException(&quot;Failed to initialize the RetireJS repo&quot;, ex);</span>
+<span class="fc" id="L152">        }</span>
+<span class="fc" id="L153">    }</span>
+
+    @Override
+    public boolean purge(Engine engine) {
+<span class="nc" id="L157">        boolean result = true;</span>
+        try {
+<span class="nc" id="L159">            final File dataDir = engine.getSettings().getDataDirectory();</span>
+<span class="nc" id="L160">            final URL repoUrl = new URL(engine.getSettings().getString(Settings.KEYS.ANALYZER_RETIREJS_REPO_JS_URL, DEFAULT_JS_URL));</span>
+<span class="nc" id="L161">            final String filename = repoUrl.getFile().substring(repoUrl.getFile().lastIndexOf(&quot;/&quot;) + 1);</span>
+<span class="nc" id="L162">            final File repo = new File(dataDir, filename);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            if (repo.exists()) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (repo.delete()) {</span>
+<span class="nc" id="L165">                    LOGGER.info(&quot;RetireJS repo removed successfully&quot;);</span>
+                } else {
+<span class="nc" id="L167">                    LOGGER.error(&quot;Unable to delete '{}'; please delete the file manually&quot;, repo.getAbsolutePath());</span>
+<span class="nc" id="L168">                    result = false;</span>
+                }
+            }
+<span class="nc" id="L171">        } catch (IOException ex) {</span>
+<span class="nc" id="L172">            LOGGER.error(&quot;Unable to delete the RetireJS repo - invalid configuration&quot;);</span>
+<span class="nc" id="L173">            result = false;</span>
+<span class="nc" id="L174">        }</span>
+<span class="nc" id="L175">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

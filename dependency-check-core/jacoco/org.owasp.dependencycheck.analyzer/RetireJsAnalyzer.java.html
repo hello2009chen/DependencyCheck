@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetireJsAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.analyzer</a> &gt; <span class="el_source">RetireJsAnalyzer.java</span></div><h1>RetireJsAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2017 Steve Springett. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.analyzer;
+
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
+import com.github.packageurl.PackageURLBuilder;
+import com.h3xstream.retirejs.repo.JsLibrary;
+import com.h3xstream.retirejs.repo.JsLibraryResult;
+import com.h3xstream.retirejs.repo.JsVulnerability;
+import com.h3xstream.retirejs.repo.ScannerFacade;
+import com.h3xstream.retirejs.repo.VulnerabilitiesRepository;
+import com.h3xstream.retirejs.repo.VulnerabilitiesRepositoryLoader;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.owasp.dependencycheck.Engine;
+import org.owasp.dependencycheck.analyzer.exception.AnalysisException;
+import org.owasp.dependencycheck.dependency.Confidence;
+import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.EvidenceType;
+import org.owasp.dependencycheck.dependency.Vulnerability;
+import org.owasp.dependencycheck.utils.FileFilterBuilder;
+import org.owasp.dependencycheck.utils.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.annotation.concurrent.ThreadSafe;
+import org.owasp.dependencycheck.data.nvdcve.DatabaseException;
+import org.owasp.dependencycheck.dependency.naming.GenericIdentifier;
+import org.owasp.dependencycheck.dependency.naming.PurlIdentifier;
+import org.owasp.dependencycheck.exception.InitializationException;
+import org.owasp.dependencycheck.utils.search.FileContentSearch;
+
+/**
+ * The RetireJS analyzer uses the manually curated list of vulnerabilities from
+ * the RetireJS community along with the necessary information to assist in
+ * identifying vulnerable components. Vulnerabilities documented by the RetireJS
+ * community usually originate from other sources such as the NVD, OSVDB, NSP,
+ * and various issue trackers.
+ *
+ * @author Steve Springett
+ */
+@ThreadSafe
+<span class="fc" id="L66">public class RetireJsAnalyzer extends AbstractFileTypeAnalyzer {</span>
+
+    /**
+     * The logger.
+     */
+<span class="fc" id="L71">    private static final Logger LOGGER = LoggerFactory.getLogger(RetireJsAnalyzer.class);</span>
+    /**
+     * A descriptor for the type of dependencies processed or added by this
+     * analyzer.
+     */
+    public static final String DEPENDENCY_ECOSYSTEM = &quot;js&quot;;
+    /**
+     * The name of the analyzer.
+     */
+    private static final String ANALYZER_NAME = &quot;RetireJS Analyzer&quot;;
+    /**
+     * The phase that this analyzer is intended to run in.
+     */
+<span class="fc" id="L84">    private static final AnalysisPhase ANALYSIS_PHASE = AnalysisPhase.FINDING_ANALYSIS;</span>
+    /**
+     * The set of file extensions supported by this analyzer.
+     */
+<span class="fc" id="L88">    private static final String[] EXTENSIONS = {&quot;js&quot;};</span>
+    /**
+     * The file filter used to determine which files this analyzer supports.
+     */
+<span class="fc" id="L92">    private static final FileFilter FILTER = FileFilterBuilder.newInstance().addExtensions(EXTENSIONS).build();</span>
+    /**
+     * An instance of the local VulnerabilitiesRepository
+     */
+    private VulnerabilitiesRepository jsRepository;
+    /**
+     * The list of filters used to exclude files by file content; the intent is
+     * that this could be used to filter out a companies custom files by filter
+     * on their own copyright statements.
+     */
+<span class="fc" id="L102">    private String[] filters = null;</span>
+
+    /**
+     * Flag indicating whether non-vulnerable JS should be excluded if they are
+     * contained in a JAR.
+     */
+    //TODO implement this
+<span class="fc" id="L109">    private boolean skipNonVulnerableInJAR = true;</span>
+
+    /**
+     * Returns the FileFilter.
+     *
+     * @return the FileFilter
+     */
+    @Override
+    protected FileFilter getFileFilter() {
+<span class="fc" id="L118">        return FILTER;</span>
+    }
+
+    /**
+     * Determines if the file can be analyzed by the analyzer.
+     *
+     * @param pathname the path to the file
+     * @return true if the file can be analyzed by the given analyzer; otherwise
+     * false
+     */
+    @Override
+    public boolean accept(File pathname) {
+        try {
+<span class="fc" id="L131">            final boolean filesMatched = super.getFilesMatched();</span>
+<span class="fc" id="L132">            final boolean accepted = super.accept(pathname);</span>
+<span class="fc bfc" id="L133" title="All 6 branches covered.">            if (accepted &amp;&amp; filters != null &amp;&amp; FileContentSearch.contains(pathname, filters)) {</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                if (!filesMatched) {</span>
+<span class="fc" id="L135">                    super.setFilesMatched(filesMatched);</span>
+                }
+<span class="fc" id="L137">                return false;</span>
+            }
+<span class="fc" id="L139">            return accepted;</span>
+<span class="nc" id="L140">        } catch (IOException ex) {</span>
+<span class="nc" id="L141">            LOGGER.warn(String.format(&quot;Error testing file %s&quot;, pathname), ex);</span>
+        }
+<span class="nc" id="L143">        return false;</span>
+    }
+
+    /**
+     * Initializes the analyzer with the configured settings.
+     *
+     * @param settings the configured settings to use
+     */
+    @Override
+    public void initialize(Settings settings) {
+<span class="fc" id="L153">        super.initialize(settings);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (this.isEnabled()) {</span>
+<span class="fc" id="L155">            this.filters = settings.getArray(Settings.KEYS.ANALYZER_RETIREJS_FILTERS);</span>
+        }
+<span class="fc" id="L157">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param engine a reference to the dependency-check engine
+     * @throws InitializationException thrown if there is an exception during
+     * initialization
+     */
+    @Override
+    protected void prepareFileTypeAnalyzer(Engine engine) throws InitializationException {
+<span class="fc" id="L168">        File repoFile = null;</span>
+        try {
+<span class="fc" id="L170">            repoFile = new File(getSettings().getDataDirectory(), &quot;jsrepository.json&quot;);</span>
+<span class="nc" id="L171">        } catch (FileNotFoundException ex) {</span>
+<span class="nc" id="L172">            this.setEnabled(false);</span>
+<span class="nc" id="L173">            throw new InitializationException(String.format(&quot;RetireJS repo does not exist locally (%s)&quot;, repoFile), ex);</span>
+<span class="nc" id="L174">        } catch (IOException ex) {</span>
+<span class="nc" id="L175">            this.setEnabled(false);</span>
+<span class="nc" id="L176">            throw new InitializationException(&quot;Failed to initialize the RetireJS repo - data directory could not be created&quot;, ex);</span>
+<span class="fc" id="L177">        }</span>
+<span class="fc" id="L178">        try (FileInputStream in = new FileInputStream(repoFile)) {</span>
+<span class="fc" id="L179">            this.jsRepository = new VulnerabilitiesRepositoryLoader().loadFromInputStream(in);</span>
+
+<span class="nc" id="L181">        } catch (IOException ex) {</span>
+<span class="nc" id="L182">            this.setEnabled(false);</span>
+<span class="nc" id="L183">            throw new InitializationException(&quot;Failed to initialize the RetireJS repo&quot;, ex);</span>
+<span class="fc" id="L184">        }</span>
+<span class="fc" id="L185">    }</span>
+
+    /**
+     * Returns the name of the analyzer.
+     *
+     * @return the name of the analyzer.
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L194">        return ANALYZER_NAME;</span>
+    }
+
+    /**
+     * Returns the phase that the analyzer is intended to run in.
+     *
+     * @return the phase that the analyzer is intended to run in.
+     */
+    @Override
+    public AnalysisPhase getAnalysisPhase() {
+<span class="fc" id="L204">        return ANALYSIS_PHASE;</span>
+    }
+
+    /**
+     * Returns the key used in the properties file to reference the analyzer's
+     * enabled property.
+     *
+     * @return the analyzer's enabled property setting key
+     */
+    @Override
+    protected String getAnalyzerEnabledSettingKey() {
+<span class="fc" id="L215">        return Settings.KEYS.ANALYZER_RETIREJS_ENABLED;</span>
+    }
+
+    /**
+     * Analyzes the specified JavaScript file.
+     *
+     * @param dependency the dependency to analyze.
+     * @param engine the engine that is scanning the dependencies
+     * @throws AnalysisException is thrown if there is an error reading the file
+     * file.
+     */
+    @Override
+    public void analyzeDependency(Dependency dependency, Engine engine) throws AnalysisException {
+        try {
+<span class="fc" id="L229">            final byte[] fileContent = IOUtils.toByteArray(new FileInputStream(dependency.getActualFile()));</span>
+<span class="fc" id="L230">            final ScannerFacade scanner = new ScannerFacade(jsRepository);</span>
+            final List&lt;JsLibraryResult&gt; results;
+            try {
+<span class="fc" id="L233">                results = scanner.scanScript(dependency.getActualFile().getAbsolutePath(), fileContent, 0);</span>
+<span class="nc" id="L234">            } catch (StackOverflowError ex) {</span>
+<span class="nc" id="L235">                final String msg = String.format(&quot;An error occured trying to analyze %s. &quot;</span>
+                        + &quot;To resolve this error please try increasing the Java stack size to &quot;
+                        + &quot;8mb and re-run dependency-check:%n%n&quot;
+                        + &quot;(win) : set JAVA_OPTS=\&quot;-Xss8192k\&quot;%n&quot;
+                        + &quot;(*nix): export JAVA_OPTS=\&quot;-Xss8192k\&quot;%n%n&quot;,
+<span class="nc" id="L240">                        dependency.getDisplayFileName());</span>
+<span class="nc" id="L241">                throw new AnalysisException(msg, ex);</span>
+<span class="fc" id="L242">            }</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">            if (results.size() &gt; 0) {</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                for (JsLibraryResult libraryResult : results) {</span>
+
+<span class="fc" id="L246">                    final JsLibrary lib = libraryResult.getLibrary();</span>
+<span class="fc" id="L247">                    dependency.setName(lib.getName());</span>
+<span class="fc" id="L248">                    dependency.setVersion(libraryResult.getDetectedVersion());</span>
+                    try {
+<span class="fc" id="L250">                        final PackageURL purl = PackageURLBuilder.aPackageURL().withType(&quot;javascript&quot;)</span>
+<span class="fc" id="L251">                                .withName(lib.getName()).withVersion(libraryResult.getDetectedVersion()).build();</span>
+<span class="fc" id="L252">                        dependency.addSoftwareIdentifier(new PurlIdentifier(purl, Confidence.HIGHEST));</span>
+<span class="nc" id="L253">                    } catch (MalformedPackageURLException ex) {</span>
+<span class="nc" id="L254">                        LOGGER.debug(&quot;Unable to build package url for retireJS&quot;, ex);</span>
+<span class="nc" id="L255">                        final GenericIdentifier id = new GenericIdentifier(&quot;javascript:&quot; + lib.getName() + &quot;@&quot;</span>
+<span class="nc" id="L256">                                + libraryResult.getDetectedVersion(), Confidence.HIGHEST);</span>
+<span class="nc" id="L257">                        dependency.addSoftwareIdentifier(id);</span>
+<span class="fc" id="L258">                    }</span>
+
+<span class="fc" id="L260">                    dependency.addEvidence(EvidenceType.VERSION, &quot;file&quot;, &quot;version&quot;, libraryResult.getDetectedVersion(), Confidence.HIGH);</span>
+<span class="fc" id="L261">                    dependency.addEvidence(EvidenceType.PRODUCT, &quot;file&quot;, &quot;name&quot;, libraryResult.getLibrary().getName(), Confidence.HIGH);</span>
+<span class="fc" id="L262">                    dependency.addEvidence(EvidenceType.VENDOR, &quot;file&quot;, &quot;name&quot;, libraryResult.getLibrary().getName(), Confidence.HIGH);</span>
+
+<span class="fc" id="L264">                    final List&lt;Vulnerability&gt; vulns = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L265">                    final JsVulnerability jsVuln = libraryResult.getVuln();</span>
+
+<span class="pc bpc" id="L267" title="1 of 4 branches missed.">                    if (jsVuln.getIdentifiers().containsKey(&quot;CVE&quot;) || jsVuln.getIdentifiers().containsKey(&quot;osvdb&quot;)) {</span>
+                        /* CVEs and OSVDB are an array of Strings - each one a unique vulnerability.
+                         * So the JsVulnerability we are operating on may actually be representing
+                         * multiple vulnerabilities. */
+
+                        //TODO - can we refactor this to avoid russian doll syndrome (i.e. nesting)?
+                        //CSOFF: NestedForDepth
+<span class="fc bfc" id="L274" title="All 2 branches covered.">                        for (Map.Entry&lt;String, List&lt;String&gt;&gt; entry : jsVuln.getIdentifiers().entrySet()) {</span>
+<span class="fc" id="L275">                            final String key = entry.getKey();</span>
+<span class="fc" id="L276">                            final List&lt;String&gt; value = entry.getValue();</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">                            if (&quot;CVE&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">                                for (String cve : value) {</span>
+<span class="fc" id="L279">                                    Vulnerability vuln = engine.getDatabase().getVulnerability(StringUtils.trim(cve));</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                                    if (vuln == null) {</span>
+                                        /* The CVE does not exist in the database and is likely in a
+                                         * reserved state. Create a new one without adding it to the
+                                         * database and populate it as best as possible. */
+<span class="fc" id="L284">                                        vuln = new Vulnerability();</span>
+<span class="fc" id="L285">                                        vuln.setName(cve);</span>
+<span class="fc" id="L286">                                        vuln.setUnscoredSeverity(jsVuln.getSeverity());</span>
+<span class="fc" id="L287">                                        vuln.setSource(Vulnerability.Source.RETIREJS);</span>
+                                    }
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                                    for (String info : jsVuln.getInfo()) {</span>
+<span class="fc" id="L290">                                        vuln.addReference(&quot;info&quot;, &quot;info&quot;, info);</span>
+<span class="fc" id="L291">                                    }</span>
+<span class="fc" id="L292">                                    vulns.add(vuln);</span>
+<span class="fc" id="L293">                                }</span>
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">                            } else if (&quot;osvdb&quot;.equals(key)) {</span>
+                                //todo - convert to map/collect
+<span class="nc" id="L296">                                value.forEach((osvdb) -&gt; {</span>
+<span class="nc" id="L297">                                    final Vulnerability vuln = new Vulnerability();</span>
+<span class="nc" id="L298">                                    vuln.setName(osvdb);</span>
+<span class="nc" id="L299">                                    vuln.setSource(Vulnerability.Source.RETIREJS);</span>
+<span class="nc" id="L300">                                    vuln.setUnscoredSeverity(jsVuln.getSeverity());</span>
+<span class="nc" id="L301">                                    jsVuln.getInfo().forEach((info) -&gt; vuln.addReference(&quot;info&quot;, &quot;info&quot;, info));</span>
+<span class="nc" id="L302">                                    vulns.add(vuln);</span>
+<span class="nc" id="L303">                                });</span>
+                            }
+<span class="fc" id="L305">                            dependency.addVulnerabilities(vulns);</span>
+<span class="fc" id="L306">                        }</span>
+                        //CSON: NestedForDepth
+                    } else {
+<span class="fc" id="L309">                        final Vulnerability individualVuln = new Vulnerability();</span>
+                        /* ISSUE, BUG, etc are all individual vulnerabilities. The result of this
+                         * iteration will be one vulnerability. */
+<span class="fc bfc" id="L312" title="All 2 branches covered.">                        for (Map.Entry&lt;String, List&lt;String&gt;&gt; entry : jsVuln.getIdentifiers().entrySet()) {</span>
+<span class="fc" id="L313">                            final String key = entry.getKey();</span>
+<span class="fc" id="L314">                            final List&lt;String&gt; value = entry.getValue();</span>
+                            // CSOFF: NeedBraces
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">                            if (null != key) {</span>
+<span class="pc bpc" id="L317" title="4 of 6 branches missed.">                                switch (key) {</span>
+                                    case &quot;issue&quot;:
+<span class="nc" id="L319">                                        individualVuln.setName(libraryResult.getLibrary().getName() + &quot; issue: &quot; + value.get(0));</span>
+<span class="nc" id="L320">                                        individualVuln.addReference(key, key, value.get(0));</span>
+<span class="nc" id="L321">                                        break;</span>
+                                    case &quot;bug&quot;:
+<span class="nc" id="L323">                                        individualVuln.setName(libraryResult.getLibrary().getName() + &quot; bug: &quot; + value.get(0));</span>
+<span class="nc" id="L324">                                        individualVuln.addReference(key, key, value.get(0));</span>
+<span class="nc" id="L325">                                        break;</span>
+                                    case &quot;pr&quot;:
+<span class="nc" id="L327">                                        individualVuln.setName(libraryResult.getLibrary().getName() + &quot; pr: &quot; + value.get(0));</span>
+<span class="nc" id="L328">                                        individualVuln.addReference(key, key, value.get(0));</span>
+<span class="nc" id="L329">                                        break;</span>
+                                    case &quot;summary&quot;:
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">                                        if (null == individualVuln.getName()) {</span>
+<span class="fc" id="L332">                                            individualVuln.setName(value.get(0));</span>
+                                        }
+<span class="fc" id="L334">                                        individualVuln.setDescription(value.get(0));</span>
+<span class="fc" id="L335">                                        break;</span>
+                                    case &quot;release&quot;:
+<span class="nc" id="L337">                                        individualVuln.addReference(key, key, value.get(0));</span>
+<span class="nc" id="L338">                                        break;</span>
+                                    default:
+<span class="fc" id="L340">                                        individualVuln.addReference(key, key, value.get(0));</span>
+                                        break;
+                                }
+                            }
+                            // CSON: NeedBraces
+<span class="fc" id="L345">                        }</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">                        if (StringUtils.isEmpty(individualVuln.getName())) {</span>
+<span class="fc" id="L347">                            individualVuln.setName(&quot;Vulnerability in &quot; + libraryResult.getLibrary().getName());</span>
+                        }
+<span class="fc" id="L349">                        individualVuln.setSource(Vulnerability.Source.RETIREJS);</span>
+<span class="fc" id="L350">                        individualVuln.setUnscoredSeverity(jsVuln.getSeverity());</span>
+<span class="fc bfc" id="L351" title="All 2 branches covered.">                        for (String info : jsVuln.getInfo()) {</span>
+<span class="fc" id="L352">                            individualVuln.addReference(&quot;info&quot;, &quot;info&quot;, info);</span>
+<span class="fc" id="L353">                        }</span>
+<span class="fc" id="L354">                        dependency.addVulnerability(individualVuln);</span>
+                    }
+<span class="fc" id="L356">                }</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">            } else if (getSettings().getBoolean(Settings.KEYS.ANALYZER_RETIREJS_FILTER_NON_VULNERABLE, false)) {</span>
+<span class="fc" id="L358">                engine.removeDependency(dependency);</span>
+            }
+<span class="nc" id="L360">        } catch (IOException | DatabaseException e) {</span>
+<span class="nc" id="L361">            throw new AnalysisException(e);</span>
+<span class="fc" id="L362">        }</span>
+<span class="fc" id="L363">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

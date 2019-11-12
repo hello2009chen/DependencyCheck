@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefCpeName.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">DefCpeName.java</span></div><h1>DefCpeName.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+
+/**
+ * CPE name
+ * 
+ */
+<span class="nc" id="L12">public class DefCpeName {</span>
+
+    @SerializedName(&quot;cpe22Uri&quot;)
+    @Expose
+    private String cpe22Uri;
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;cpe23Uri&quot;)
+    @Expose
+    private String cpe23Uri;
+    @SerializedName(&quot;lastModifiedDate&quot;)
+    @Expose
+    private String lastModifiedDate;
+
+    public String getCpe22Uri() {
+<span class="nc" id="L30">        return cpe22Uri;</span>
+    }
+
+    public void setCpe22Uri(String cpe22Uri) {
+<span class="nc" id="L34">        this.cpe22Uri = cpe22Uri;</span>
+<span class="nc" id="L35">    }</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public String getCpe23Uri() {
+<span class="nc" id="L43">        return cpe23Uri;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setCpe23Uri(String cpe23Uri) {
+<span class="nc" id="L52">        this.cpe23Uri = cpe23Uri;</span>
+<span class="nc" id="L53">    }</span>
+
+    public String getLastModifiedDate() {
+<span class="nc" id="L56">        return lastModifiedDate;</span>
+    }
+
+    public void setLastModifiedDate(String lastModifiedDate) {
+<span class="nc" id="L60">        this.lastModifiedDate = lastModifiedDate;</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L65">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L66">        sb.append(DefCpeName.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L67">        sb.append(&quot;cpe22Uri&quot;);</span>
+<span class="nc" id="L68">        sb.append('=');</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        sb.append(((this.cpe22Uri == null)?&quot;&lt;null&gt;&quot;:this.cpe22Uri));</span>
+<span class="nc" id="L70">        sb.append(',');</span>
+<span class="nc" id="L71">        sb.append(&quot;cpe23Uri&quot;);</span>
+<span class="nc" id="L72">        sb.append('=');</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        sb.append(((this.cpe23Uri == null)?&quot;&lt;null&gt;&quot;:this.cpe23Uri));</span>
+<span class="nc" id="L74">        sb.append(',');</span>
+<span class="nc" id="L75">        sb.append(&quot;lastModifiedDate&quot;);</span>
+<span class="nc" id="L76">        sb.append('=');</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        sb.append(((this.lastModifiedDate == null)?&quot;&lt;null&gt;&quot;:this.lastModifiedDate));</span>
+<span class="nc" id="L78">        sb.append(',');</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L80">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L82">            sb.append(']');</span>
+        }
+<span class="nc" id="L84">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L89">        int result = 1;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        result = ((result* 31)+((this.cpe23Uri == null)? 0 :this.cpe23Uri.hashCode()));</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        result = ((result* 31)+((this.cpe22Uri == null)? 0 :this.cpe22Uri.hashCode()));</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        result = ((result* 31)+((this.lastModifiedDate == null)? 0 :this.lastModifiedDate.hashCode()));</span>
+<span class="nc" id="L93">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L99">            return true;</span>
+        }
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if ((other instanceof DefCpeName) == false) {</span>
+<span class="nc" id="L102">            return false;</span>
+        }
+<span class="nc" id="L104">        DefCpeName rhs = ((DefCpeName) other);</span>
+<span class="nc bnc" id="L105" title="All 18 branches missed.">        return ((((this.cpe23Uri == rhs.cpe23Uri)||((this.cpe23Uri!= null)&amp;&amp;this.cpe23Uri.equals(rhs.cpe23Uri)))&amp;&amp;((this.cpe22Uri == rhs.cpe22Uri)||((this.cpe22Uri!= null)&amp;&amp;this.cpe22Uri.equals(rhs.cpe22Uri))))&amp;&amp;((this.lastModifiedDate == rhs.lastModifiedDate)||((this.lastModifiedDate!= null)&amp;&amp;this.lastModifiedDate.equals(rhs.lastModifiedDate))));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

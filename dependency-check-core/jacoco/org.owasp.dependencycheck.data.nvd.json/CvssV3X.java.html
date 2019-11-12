@@ -1,0 +1,1346 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CvssV3X.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">CvssV3X.java</span></div><h1>CvssV3X.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import java.util.HashMap;
+import java.util.Map;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+
+/**
+ * JSON Schema for Common Vulnerability Scoring System version 3.x
+ * &lt;p&gt;
+ * 
+ * 
+ */
+<span class="fc" id="L16">public class CvssV3X {</span>
+
+    /**
+     * CVSS Version
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;version&quot;)
+    @Expose
+    private CvssV3X.Version version;
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;vectorString&quot;)
+    @Expose
+    private String vectorString;
+    @SerializedName(&quot;attackVector&quot;)
+    @Expose
+    private CvssV3X.AttackVectorType attackVector;
+    @SerializedName(&quot;attackComplexity&quot;)
+    @Expose
+    private CvssV3X.AttackComplexityType attackComplexity;
+    @SerializedName(&quot;privilegesRequired&quot;)
+    @Expose
+    private CvssV3X.PrivilegesRequiredType privilegesRequired;
+    @SerializedName(&quot;userInteraction&quot;)
+    @Expose
+    private CvssV3X.UserInteractionType userInteraction;
+    @SerializedName(&quot;scope&quot;)
+    @Expose
+    private CvssV3X.ScopeType scope;
+    @SerializedName(&quot;confidentialityImpact&quot;)
+    @Expose
+    private CvssV3X.CiaType confidentialityImpact;
+    @SerializedName(&quot;integrityImpact&quot;)
+    @Expose
+    private CvssV3X.CiaType integrityImpact;
+    @SerializedName(&quot;availabilityImpact&quot;)
+    @Expose
+    private CvssV3X.CiaType availabilityImpact;
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;baseScore&quot;)
+    @Expose
+    private Double baseScore;
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;baseSeverity&quot;)
+    @Expose
+    private CvssV3X.SeverityType baseSeverity;
+    @SerializedName(&quot;exploitCodeMaturity&quot;)
+    @Expose
+    private CvssV3X.ExploitCodeMaturityType exploitCodeMaturity;
+    @SerializedName(&quot;remediationLevel&quot;)
+    @Expose
+    private CvssV3X.RemediationLevelType remediationLevel;
+    @SerializedName(&quot;reportConfidence&quot;)
+    @Expose
+    private CvssV3X.ConfidenceType reportConfidence;
+    @SerializedName(&quot;temporalScore&quot;)
+    @Expose
+    private Double temporalScore;
+    @SerializedName(&quot;temporalSeverity&quot;)
+    @Expose
+    private CvssV3X.SeverityType temporalSeverity;
+    @SerializedName(&quot;confidentialityRequirement&quot;)
+    @Expose
+    private CvssV3X.CiaRequirementType confidentialityRequirement;
+    @SerializedName(&quot;integrityRequirement&quot;)
+    @Expose
+    private CvssV3X.CiaRequirementType integrityRequirement;
+    @SerializedName(&quot;availabilityRequirement&quot;)
+    @Expose
+    private CvssV3X.CiaRequirementType availabilityRequirement;
+    @SerializedName(&quot;modifiedAttackVector&quot;)
+    @Expose
+    private CvssV3X.ModifiedAttackVectorType modifiedAttackVector;
+    @SerializedName(&quot;modifiedAttackComplexity&quot;)
+    @Expose
+    private CvssV3X.ModifiedAttackComplexityType modifiedAttackComplexity;
+    @SerializedName(&quot;modifiedPrivilegesRequired&quot;)
+    @Expose
+    private CvssV3X.ModifiedPrivilegesRequiredType modifiedPrivilegesRequired;
+    @SerializedName(&quot;modifiedUserInteraction&quot;)
+    @Expose
+    private CvssV3X.ModifiedUserInteractionType modifiedUserInteraction;
+    @SerializedName(&quot;modifiedScope&quot;)
+    @Expose
+    private CvssV3X.ModifiedScopeType modifiedScope;
+    @SerializedName(&quot;modifiedConfidentialityImpact&quot;)
+    @Expose
+    private CvssV3X.ModifiedCiaType modifiedConfidentialityImpact;
+    @SerializedName(&quot;modifiedIntegrityImpact&quot;)
+    @Expose
+    private CvssV3X.ModifiedCiaType modifiedIntegrityImpact;
+    @SerializedName(&quot;modifiedAvailabilityImpact&quot;)
+    @Expose
+    private CvssV3X.ModifiedCiaType modifiedAvailabilityImpact;
+    @SerializedName(&quot;environmentalScore&quot;)
+    @Expose
+    private Double environmentalScore;
+    @SerializedName(&quot;environmentalSeverity&quot;)
+    @Expose
+    private CvssV3X.SeverityType environmentalSeverity;
+
+    /**
+     * CVSS Version
+     * (Required)
+     * 
+     */
+    public CvssV3X.Version getVersion() {
+<span class="nc" id="L135">        return version;</span>
+    }
+
+    /**
+     * CVSS Version
+     * (Required)
+     * 
+     */
+    public void setVersion(CvssV3X.Version version) {
+<span class="nc" id="L144">        this.version = version;</span>
+<span class="nc" id="L145">    }</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public String getVectorString() {
+<span class="nc" id="L153">        return vectorString;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setVectorString(String vectorString) {
+<span class="nc" id="L162">        this.vectorString = vectorString;</span>
+<span class="nc" id="L163">    }</span>
+
+    public CvssV3X.AttackVectorType getAttackVector() {
+<span class="fc" id="L166">        return attackVector;</span>
+    }
+
+    public void setAttackVector(CvssV3X.AttackVectorType attackVector) {
+<span class="nc" id="L170">        this.attackVector = attackVector;</span>
+<span class="nc" id="L171">    }</span>
+
+    public CvssV3X.AttackComplexityType getAttackComplexity() {
+<span class="fc" id="L174">        return attackComplexity;</span>
+    }
+
+    public void setAttackComplexity(CvssV3X.AttackComplexityType attackComplexity) {
+<span class="nc" id="L178">        this.attackComplexity = attackComplexity;</span>
+<span class="nc" id="L179">    }</span>
+
+    public CvssV3X.PrivilegesRequiredType getPrivilegesRequired() {
+<span class="fc" id="L182">        return privilegesRequired;</span>
+    }
+
+    public void setPrivilegesRequired(CvssV3X.PrivilegesRequiredType privilegesRequired) {
+<span class="nc" id="L186">        this.privilegesRequired = privilegesRequired;</span>
+<span class="nc" id="L187">    }</span>
+
+    public CvssV3X.UserInteractionType getUserInteraction() {
+<span class="fc" id="L190">        return userInteraction;</span>
+    }
+
+    public void setUserInteraction(CvssV3X.UserInteractionType userInteraction) {
+<span class="nc" id="L194">        this.userInteraction = userInteraction;</span>
+<span class="nc" id="L195">    }</span>
+
+    public CvssV3X.ScopeType getScope() {
+<span class="fc" id="L198">        return scope;</span>
+    }
+
+    public void setScope(CvssV3X.ScopeType scope) {
+<span class="nc" id="L202">        this.scope = scope;</span>
+<span class="nc" id="L203">    }</span>
+
+    public CvssV3X.CiaType getConfidentialityImpact() {
+<span class="fc" id="L206">        return confidentialityImpact;</span>
+    }
+
+    public void setConfidentialityImpact(CvssV3X.CiaType confidentialityImpact) {
+<span class="nc" id="L210">        this.confidentialityImpact = confidentialityImpact;</span>
+<span class="nc" id="L211">    }</span>
+
+    public CvssV3X.CiaType getIntegrityImpact() {
+<span class="fc" id="L214">        return integrityImpact;</span>
+    }
+
+    public void setIntegrityImpact(CvssV3X.CiaType integrityImpact) {
+<span class="nc" id="L218">        this.integrityImpact = integrityImpact;</span>
+<span class="nc" id="L219">    }</span>
+
+    public CvssV3X.CiaType getAvailabilityImpact() {
+<span class="fc" id="L222">        return availabilityImpact;</span>
+    }
+
+    public void setAvailabilityImpact(CvssV3X.CiaType availabilityImpact) {
+<span class="nc" id="L226">        this.availabilityImpact = availabilityImpact;</span>
+<span class="nc" id="L227">    }</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public Double getBaseScore() {
+<span class="fc" id="L235">        return baseScore;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setBaseScore(Double baseScore) {
+<span class="nc" id="L244">        this.baseScore = baseScore;</span>
+<span class="nc" id="L245">    }</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public CvssV3X.SeverityType getBaseSeverity() {
+<span class="fc" id="L253">        return baseSeverity;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setBaseSeverity(CvssV3X.SeverityType baseSeverity) {
+<span class="nc" id="L262">        this.baseSeverity = baseSeverity;</span>
+<span class="nc" id="L263">    }</span>
+
+    public CvssV3X.ExploitCodeMaturityType getExploitCodeMaturity() {
+<span class="nc" id="L266">        return exploitCodeMaturity;</span>
+    }
+
+    public void setExploitCodeMaturity(CvssV3X.ExploitCodeMaturityType exploitCodeMaturity) {
+<span class="nc" id="L270">        this.exploitCodeMaturity = exploitCodeMaturity;</span>
+<span class="nc" id="L271">    }</span>
+
+    public CvssV3X.RemediationLevelType getRemediationLevel() {
+<span class="nc" id="L274">        return remediationLevel;</span>
+    }
+
+    public void setRemediationLevel(CvssV3X.RemediationLevelType remediationLevel) {
+<span class="nc" id="L278">        this.remediationLevel = remediationLevel;</span>
+<span class="nc" id="L279">    }</span>
+
+    public CvssV3X.ConfidenceType getReportConfidence() {
+<span class="nc" id="L282">        return reportConfidence;</span>
+    }
+
+    public void setReportConfidence(CvssV3X.ConfidenceType reportConfidence) {
+<span class="nc" id="L286">        this.reportConfidence = reportConfidence;</span>
+<span class="nc" id="L287">    }</span>
+
+    public Double getTemporalScore() {
+<span class="nc" id="L290">        return temporalScore;</span>
+    }
+
+    public void setTemporalScore(Double temporalScore) {
+<span class="nc" id="L294">        this.temporalScore = temporalScore;</span>
+<span class="nc" id="L295">    }</span>
+
+    public CvssV3X.SeverityType getTemporalSeverity() {
+<span class="nc" id="L298">        return temporalSeverity;</span>
+    }
+
+    public void setTemporalSeverity(CvssV3X.SeverityType temporalSeverity) {
+<span class="nc" id="L302">        this.temporalSeverity = temporalSeverity;</span>
+<span class="nc" id="L303">    }</span>
+
+    public CvssV3X.CiaRequirementType getConfidentialityRequirement() {
+<span class="nc" id="L306">        return confidentialityRequirement;</span>
+    }
+
+    public void setConfidentialityRequirement(CvssV3X.CiaRequirementType confidentialityRequirement) {
+<span class="nc" id="L310">        this.confidentialityRequirement = confidentialityRequirement;</span>
+<span class="nc" id="L311">    }</span>
+
+    public CvssV3X.CiaRequirementType getIntegrityRequirement() {
+<span class="nc" id="L314">        return integrityRequirement;</span>
+    }
+
+    public void setIntegrityRequirement(CvssV3X.CiaRequirementType integrityRequirement) {
+<span class="nc" id="L318">        this.integrityRequirement = integrityRequirement;</span>
+<span class="nc" id="L319">    }</span>
+
+    public CvssV3X.CiaRequirementType getAvailabilityRequirement() {
+<span class="nc" id="L322">        return availabilityRequirement;</span>
+    }
+
+    public void setAvailabilityRequirement(CvssV3X.CiaRequirementType availabilityRequirement) {
+<span class="nc" id="L326">        this.availabilityRequirement = availabilityRequirement;</span>
+<span class="nc" id="L327">    }</span>
+
+    public CvssV3X.ModifiedAttackVectorType getModifiedAttackVector() {
+<span class="nc" id="L330">        return modifiedAttackVector;</span>
+    }
+
+    public void setModifiedAttackVector(CvssV3X.ModifiedAttackVectorType modifiedAttackVector) {
+<span class="nc" id="L334">        this.modifiedAttackVector = modifiedAttackVector;</span>
+<span class="nc" id="L335">    }</span>
+
+    public CvssV3X.ModifiedAttackComplexityType getModifiedAttackComplexity() {
+<span class="nc" id="L338">        return modifiedAttackComplexity;</span>
+    }
+
+    public void setModifiedAttackComplexity(CvssV3X.ModifiedAttackComplexityType modifiedAttackComplexity) {
+<span class="nc" id="L342">        this.modifiedAttackComplexity = modifiedAttackComplexity;</span>
+<span class="nc" id="L343">    }</span>
+
+    public CvssV3X.ModifiedPrivilegesRequiredType getModifiedPrivilegesRequired() {
+<span class="nc" id="L346">        return modifiedPrivilegesRequired;</span>
+    }
+
+    public void setModifiedPrivilegesRequired(CvssV3X.ModifiedPrivilegesRequiredType modifiedPrivilegesRequired) {
+<span class="nc" id="L350">        this.modifiedPrivilegesRequired = modifiedPrivilegesRequired;</span>
+<span class="nc" id="L351">    }</span>
+
+    public CvssV3X.ModifiedUserInteractionType getModifiedUserInteraction() {
+<span class="nc" id="L354">        return modifiedUserInteraction;</span>
+    }
+
+    public void setModifiedUserInteraction(CvssV3X.ModifiedUserInteractionType modifiedUserInteraction) {
+<span class="nc" id="L358">        this.modifiedUserInteraction = modifiedUserInteraction;</span>
+<span class="nc" id="L359">    }</span>
+
+    public CvssV3X.ModifiedScopeType getModifiedScope() {
+<span class="nc" id="L362">        return modifiedScope;</span>
+    }
+
+    public void setModifiedScope(CvssV3X.ModifiedScopeType modifiedScope) {
+<span class="nc" id="L366">        this.modifiedScope = modifiedScope;</span>
+<span class="nc" id="L367">    }</span>
+
+    public CvssV3X.ModifiedCiaType getModifiedConfidentialityImpact() {
+<span class="nc" id="L370">        return modifiedConfidentialityImpact;</span>
+    }
+
+    public void setModifiedConfidentialityImpact(CvssV3X.ModifiedCiaType modifiedConfidentialityImpact) {
+<span class="nc" id="L374">        this.modifiedConfidentialityImpact = modifiedConfidentialityImpact;</span>
+<span class="nc" id="L375">    }</span>
+
+    public CvssV3X.ModifiedCiaType getModifiedIntegrityImpact() {
+<span class="nc" id="L378">        return modifiedIntegrityImpact;</span>
+    }
+
+    public void setModifiedIntegrityImpact(CvssV3X.ModifiedCiaType modifiedIntegrityImpact) {
+<span class="nc" id="L382">        this.modifiedIntegrityImpact = modifiedIntegrityImpact;</span>
+<span class="nc" id="L383">    }</span>
+
+    public CvssV3X.ModifiedCiaType getModifiedAvailabilityImpact() {
+<span class="nc" id="L386">        return modifiedAvailabilityImpact;</span>
+    }
+
+    public void setModifiedAvailabilityImpact(CvssV3X.ModifiedCiaType modifiedAvailabilityImpact) {
+<span class="nc" id="L390">        this.modifiedAvailabilityImpact = modifiedAvailabilityImpact;</span>
+<span class="nc" id="L391">    }</span>
+
+    public Double getEnvironmentalScore() {
+<span class="nc" id="L394">        return environmentalScore;</span>
+    }
+
+    public void setEnvironmentalScore(Double environmentalScore) {
+<span class="nc" id="L398">        this.environmentalScore = environmentalScore;</span>
+<span class="nc" id="L399">    }</span>
+
+    public CvssV3X.SeverityType getEnvironmentalSeverity() {
+<span class="nc" id="L402">        return environmentalSeverity;</span>
+    }
+
+    public void setEnvironmentalSeverity(CvssV3X.SeverityType environmentalSeverity) {
+<span class="nc" id="L406">        this.environmentalSeverity = environmentalSeverity;</span>
+<span class="nc" id="L407">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L411">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L412">        sb.append(CvssV3X.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L413">        sb.append(&quot;version&quot;);</span>
+<span class="nc" id="L414">        sb.append('=');</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        sb.append(((this.version == null)?&quot;&lt;null&gt;&quot;:this.version));</span>
+<span class="nc" id="L416">        sb.append(',');</span>
+<span class="nc" id="L417">        sb.append(&quot;vectorString&quot;);</span>
+<span class="nc" id="L418">        sb.append('=');</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">        sb.append(((this.vectorString == null)?&quot;&lt;null&gt;&quot;:this.vectorString));</span>
+<span class="nc" id="L420">        sb.append(',');</span>
+<span class="nc" id="L421">        sb.append(&quot;attackVector&quot;);</span>
+<span class="nc" id="L422">        sb.append('=');</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        sb.append(((this.attackVector == null)?&quot;&lt;null&gt;&quot;:this.attackVector));</span>
+<span class="nc" id="L424">        sb.append(',');</span>
+<span class="nc" id="L425">        sb.append(&quot;attackComplexity&quot;);</span>
+<span class="nc" id="L426">        sb.append('=');</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        sb.append(((this.attackComplexity == null)?&quot;&lt;null&gt;&quot;:this.attackComplexity));</span>
+<span class="nc" id="L428">        sb.append(',');</span>
+<span class="nc" id="L429">        sb.append(&quot;privilegesRequired&quot;);</span>
+<span class="nc" id="L430">        sb.append('=');</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">        sb.append(((this.privilegesRequired == null)?&quot;&lt;null&gt;&quot;:this.privilegesRequired));</span>
+<span class="nc" id="L432">        sb.append(',');</span>
+<span class="nc" id="L433">        sb.append(&quot;userInteraction&quot;);</span>
+<span class="nc" id="L434">        sb.append('=');</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">        sb.append(((this.userInteraction == null)?&quot;&lt;null&gt;&quot;:this.userInteraction));</span>
+<span class="nc" id="L436">        sb.append(',');</span>
+<span class="nc" id="L437">        sb.append(&quot;scope&quot;);</span>
+<span class="nc" id="L438">        sb.append('=');</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        sb.append(((this.scope == null)?&quot;&lt;null&gt;&quot;:this.scope));</span>
+<span class="nc" id="L440">        sb.append(',');</span>
+<span class="nc" id="L441">        sb.append(&quot;confidentialityImpact&quot;);</span>
+<span class="nc" id="L442">        sb.append('=');</span>
+<span class="nc bnc" id="L443" title="All 2 branches missed.">        sb.append(((this.confidentialityImpact == null)?&quot;&lt;null&gt;&quot;:this.confidentialityImpact));</span>
+<span class="nc" id="L444">        sb.append(',');</span>
+<span class="nc" id="L445">        sb.append(&quot;integrityImpact&quot;);</span>
+<span class="nc" id="L446">        sb.append('=');</span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">        sb.append(((this.integrityImpact == null)?&quot;&lt;null&gt;&quot;:this.integrityImpact));</span>
+<span class="nc" id="L448">        sb.append(',');</span>
+<span class="nc" id="L449">        sb.append(&quot;availabilityImpact&quot;);</span>
+<span class="nc" id="L450">        sb.append('=');</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">        sb.append(((this.availabilityImpact == null)?&quot;&lt;null&gt;&quot;:this.availabilityImpact));</span>
+<span class="nc" id="L452">        sb.append(',');</span>
+<span class="nc" id="L453">        sb.append(&quot;baseScore&quot;);</span>
+<span class="nc" id="L454">        sb.append('=');</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">        sb.append(((this.baseScore == null)?&quot;&lt;null&gt;&quot;:this.baseScore));</span>
+<span class="nc" id="L456">        sb.append(',');</span>
+<span class="nc" id="L457">        sb.append(&quot;baseSeverity&quot;);</span>
+<span class="nc" id="L458">        sb.append('=');</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">        sb.append(((this.baseSeverity == null)?&quot;&lt;null&gt;&quot;:this.baseSeverity));</span>
+<span class="nc" id="L460">        sb.append(',');</span>
+<span class="nc" id="L461">        sb.append(&quot;exploitCodeMaturity&quot;);</span>
+<span class="nc" id="L462">        sb.append('=');</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">        sb.append(((this.exploitCodeMaturity == null)?&quot;&lt;null&gt;&quot;:this.exploitCodeMaturity));</span>
+<span class="nc" id="L464">        sb.append(',');</span>
+<span class="nc" id="L465">        sb.append(&quot;remediationLevel&quot;);</span>
+<span class="nc" id="L466">        sb.append('=');</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        sb.append(((this.remediationLevel == null)?&quot;&lt;null&gt;&quot;:this.remediationLevel));</span>
+<span class="nc" id="L468">        sb.append(',');</span>
+<span class="nc" id="L469">        sb.append(&quot;reportConfidence&quot;);</span>
+<span class="nc" id="L470">        sb.append('=');</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        sb.append(((this.reportConfidence == null)?&quot;&lt;null&gt;&quot;:this.reportConfidence));</span>
+<span class="nc" id="L472">        sb.append(',');</span>
+<span class="nc" id="L473">        sb.append(&quot;temporalScore&quot;);</span>
+<span class="nc" id="L474">        sb.append('=');</span>
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        sb.append(((this.temporalScore == null)?&quot;&lt;null&gt;&quot;:this.temporalScore));</span>
+<span class="nc" id="L476">        sb.append(',');</span>
+<span class="nc" id="L477">        sb.append(&quot;temporalSeverity&quot;);</span>
+<span class="nc" id="L478">        sb.append('=');</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">        sb.append(((this.temporalSeverity == null)?&quot;&lt;null&gt;&quot;:this.temporalSeverity));</span>
+<span class="nc" id="L480">        sb.append(',');</span>
+<span class="nc" id="L481">        sb.append(&quot;confidentialityRequirement&quot;);</span>
+<span class="nc" id="L482">        sb.append('=');</span>
+<span class="nc bnc" id="L483" title="All 2 branches missed.">        sb.append(((this.confidentialityRequirement == null)?&quot;&lt;null&gt;&quot;:this.confidentialityRequirement));</span>
+<span class="nc" id="L484">        sb.append(',');</span>
+<span class="nc" id="L485">        sb.append(&quot;integrityRequirement&quot;);</span>
+<span class="nc" id="L486">        sb.append('=');</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        sb.append(((this.integrityRequirement == null)?&quot;&lt;null&gt;&quot;:this.integrityRequirement));</span>
+<span class="nc" id="L488">        sb.append(',');</span>
+<span class="nc" id="L489">        sb.append(&quot;availabilityRequirement&quot;);</span>
+<span class="nc" id="L490">        sb.append('=');</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">        sb.append(((this.availabilityRequirement == null)?&quot;&lt;null&gt;&quot;:this.availabilityRequirement));</span>
+<span class="nc" id="L492">        sb.append(',');</span>
+<span class="nc" id="L493">        sb.append(&quot;modifiedAttackVector&quot;);</span>
+<span class="nc" id="L494">        sb.append('=');</span>
+<span class="nc bnc" id="L495" title="All 2 branches missed.">        sb.append(((this.modifiedAttackVector == null)?&quot;&lt;null&gt;&quot;:this.modifiedAttackVector));</span>
+<span class="nc" id="L496">        sb.append(',');</span>
+<span class="nc" id="L497">        sb.append(&quot;modifiedAttackComplexity&quot;);</span>
+<span class="nc" id="L498">        sb.append('=');</span>
+<span class="nc bnc" id="L499" title="All 2 branches missed.">        sb.append(((this.modifiedAttackComplexity == null)?&quot;&lt;null&gt;&quot;:this.modifiedAttackComplexity));</span>
+<span class="nc" id="L500">        sb.append(',');</span>
+<span class="nc" id="L501">        sb.append(&quot;modifiedPrivilegesRequired&quot;);</span>
+<span class="nc" id="L502">        sb.append('=');</span>
+<span class="nc bnc" id="L503" title="All 2 branches missed.">        sb.append(((this.modifiedPrivilegesRequired == null)?&quot;&lt;null&gt;&quot;:this.modifiedPrivilegesRequired));</span>
+<span class="nc" id="L504">        sb.append(',');</span>
+<span class="nc" id="L505">        sb.append(&quot;modifiedUserInteraction&quot;);</span>
+<span class="nc" id="L506">        sb.append('=');</span>
+<span class="nc bnc" id="L507" title="All 2 branches missed.">        sb.append(((this.modifiedUserInteraction == null)?&quot;&lt;null&gt;&quot;:this.modifiedUserInteraction));</span>
+<span class="nc" id="L508">        sb.append(',');</span>
+<span class="nc" id="L509">        sb.append(&quot;modifiedScope&quot;);</span>
+<span class="nc" id="L510">        sb.append('=');</span>
+<span class="nc bnc" id="L511" title="All 2 branches missed.">        sb.append(((this.modifiedScope == null)?&quot;&lt;null&gt;&quot;:this.modifiedScope));</span>
+<span class="nc" id="L512">        sb.append(',');</span>
+<span class="nc" id="L513">        sb.append(&quot;modifiedConfidentialityImpact&quot;);</span>
+<span class="nc" id="L514">        sb.append('=');</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        sb.append(((this.modifiedConfidentialityImpact == null)?&quot;&lt;null&gt;&quot;:this.modifiedConfidentialityImpact));</span>
+<span class="nc" id="L516">        sb.append(',');</span>
+<span class="nc" id="L517">        sb.append(&quot;modifiedIntegrityImpact&quot;);</span>
+<span class="nc" id="L518">        sb.append('=');</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">        sb.append(((this.modifiedIntegrityImpact == null)?&quot;&lt;null&gt;&quot;:this.modifiedIntegrityImpact));</span>
+<span class="nc" id="L520">        sb.append(',');</span>
+<span class="nc" id="L521">        sb.append(&quot;modifiedAvailabilityImpact&quot;);</span>
+<span class="nc" id="L522">        sb.append('=');</span>
+<span class="nc bnc" id="L523" title="All 2 branches missed.">        sb.append(((this.modifiedAvailabilityImpact == null)?&quot;&lt;null&gt;&quot;:this.modifiedAvailabilityImpact));</span>
+<span class="nc" id="L524">        sb.append(',');</span>
+<span class="nc" id="L525">        sb.append(&quot;environmentalScore&quot;);</span>
+<span class="nc" id="L526">        sb.append('=');</span>
+<span class="nc bnc" id="L527" title="All 2 branches missed.">        sb.append(((this.environmentalScore == null)?&quot;&lt;null&gt;&quot;:this.environmentalScore));</span>
+<span class="nc" id="L528">        sb.append(',');</span>
+<span class="nc" id="L529">        sb.append(&quot;environmentalSeverity&quot;);</span>
+<span class="nc" id="L530">        sb.append('=');</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">        sb.append(((this.environmentalSeverity == null)?&quot;&lt;null&gt;&quot;:this.environmentalSeverity));</span>
+<span class="nc" id="L532">        sb.append(',');</span>
+<span class="nc bnc" id="L533" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L534">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L536">            sb.append(']');</span>
+        }
+<span class="nc" id="L538">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L543">        int result = 1;</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedPrivilegesRequired == null)? 0 :this.modifiedPrivilegesRequired.hashCode()));</span>
+<span class="nc bnc" id="L545" title="All 2 branches missed.">        result = ((result* 31)+((this.reportConfidence == null)? 0 :this.reportConfidence.hashCode()));</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedConfidentialityImpact == null)? 0 :this.modifiedConfidentialityImpact.hashCode()));</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">        result = ((result* 31)+((this.availabilityImpact == null)? 0 :this.availabilityImpact.hashCode()));</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">        result = ((result* 31)+((this.privilegesRequired == null)? 0 :this.privilegesRequired.hashCode()));</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">        result = ((result* 31)+((this.baseScore == null)? 0 :this.baseScore.hashCode()));</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">        result = ((result* 31)+((this.temporalSeverity == null)? 0 :this.temporalSeverity.hashCode()));</span>
+<span class="nc bnc" id="L551" title="All 2 branches missed.">        result = ((result* 31)+((this.userInteraction == null)? 0 :this.userInteraction.hashCode()));</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">        result = ((result* 31)+((this.integrityRequirement == null)? 0 :this.integrityRequirement.hashCode()));</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedAvailabilityImpact == null)? 0 :this.modifiedAvailabilityImpact.hashCode()));</span>
+<span class="nc bnc" id="L554" title="All 2 branches missed.">        result = ((result* 31)+((this.availabilityRequirement == null)? 0 :this.availabilityRequirement.hashCode()));</span>
+<span class="nc bnc" id="L555" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedScope == null)? 0 :this.modifiedScope.hashCode()));</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">        result = ((result* 31)+((this.attackComplexity == null)? 0 :this.attackComplexity.hashCode()));</span>
+<span class="nc bnc" id="L557" title="All 2 branches missed.">        result = ((result* 31)+((this.scope == null)? 0 :this.scope.hashCode()));</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">        result = ((result* 31)+((this.attackVector == null)? 0 :this.attackVector.hashCode()));</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">        result = ((result* 31)+((this.integrityImpact == null)? 0 :this.integrityImpact.hashCode()));</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedIntegrityImpact == null)? 0 :this.modifiedIntegrityImpact.hashCode()));</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">        result = ((result* 31)+((this.vectorString == null)? 0 :this.vectorString.hashCode()));</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">        result = ((result* 31)+((this.exploitCodeMaturity == null)? 0 :this.exploitCodeMaturity.hashCode()));</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">        result = ((result* 31)+((this.temporalScore == null)? 0 :this.temporalScore.hashCode()));</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedAttackVector == null)? 0 :this.modifiedAttackVector.hashCode()));</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">        result = ((result* 31)+((this.version == null)? 0 :this.version.hashCode()));</span>
+<span class="nc bnc" id="L566" title="All 2 branches missed.">        result = ((result* 31)+((this.confidentialityRequirement == null)? 0 :this.confidentialityRequirement.hashCode()));</span>
+<span class="nc bnc" id="L567" title="All 2 branches missed.">        result = ((result* 31)+((this.remediationLevel == null)? 0 :this.remediationLevel.hashCode()));</span>
+<span class="nc bnc" id="L568" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedUserInteraction == null)? 0 :this.modifiedUserInteraction.hashCode()));</span>
+<span class="nc bnc" id="L569" title="All 2 branches missed.">        result = ((result* 31)+((this.modifiedAttackComplexity == null)? 0 :this.modifiedAttackComplexity.hashCode()));</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">        result = ((result* 31)+((this.baseSeverity == null)? 0 :this.baseSeverity.hashCode()));</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">        result = ((result* 31)+((this.confidentialityImpact == null)? 0 :this.confidentialityImpact.hashCode()));</span>
+<span class="nc bnc" id="L572" title="All 2 branches missed.">        result = ((result* 31)+((this.environmentalScore == null)? 0 :this.environmentalScore.hashCode()));</span>
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        result = ((result* 31)+((this.environmentalSeverity == null)? 0 :this.environmentalSeverity.hashCode()));</span>
+<span class="nc" id="L574">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L579" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L580">            return true;</span>
+        }
+<span class="nc bnc" id="L582" title="All 2 branches missed.">        if ((other instanceof CvssV3X) == false) {</span>
+<span class="nc" id="L583">            return false;</span>
+        }
+<span class="nc" id="L585">        CvssV3X rhs = ((CvssV3X) other);</span>
+<span class="nc bnc" id="L586" title="All 180 branches missed.">        return (((((((((((((((((((((((((((((((this.modifiedPrivilegesRequired == rhs.modifiedPrivilegesRequired)||((this.modifiedPrivilegesRequired!= null)&amp;&amp;this.modifiedPrivilegesRequired.equals(rhs.modifiedPrivilegesRequired)))&amp;&amp;((this.reportConfidence == rhs.reportConfidence)||((this.reportConfidence!= null)&amp;&amp;this.reportConfidence.equals(rhs.reportConfidence))))&amp;&amp;((this.modifiedConfidentialityImpact == rhs.modifiedConfidentialityImpact)||((this.modifiedConfidentialityImpact!= null)&amp;&amp;this.modifiedConfidentialityImpact.equals(rhs.modifiedConfidentialityImpact))))&amp;&amp;((this.availabilityImpact == rhs.availabilityImpact)||((this.availabilityImpact!= null)&amp;&amp;this.availabilityImpact.equals(rhs.availabilityImpact))))&amp;&amp;((this.privilegesRequired == rhs.privilegesRequired)||((this.privilegesRequired!= null)&amp;&amp;this.privilegesRequired.equals(rhs.privilegesRequired))))&amp;&amp;((this.baseScore == rhs.baseScore)||((this.baseScore!= null)&amp;&amp;this.baseScore.equals(rhs.baseScore))))&amp;&amp;((this.temporalSeverity == rhs.temporalSeverity)||((this.temporalSeverity!= null)&amp;&amp;this.temporalSeverity.equals(rhs.temporalSeverity))))&amp;&amp;((this.userInteraction == rhs.userInteraction)||((this.userInteraction!= null)&amp;&amp;this.userInteraction.equals(rhs.userInteraction))))&amp;&amp;((this.integrityRequirement == rhs.integrityRequirement)||((this.integrityRequirement!= null)&amp;&amp;this.integrityRequirement.equals(rhs.integrityRequirement))))&amp;&amp;((this.modifiedAvailabilityImpact == rhs.modifiedAvailabilityImpact)||((this.modifiedAvailabilityImpact!= null)&amp;&amp;this.modifiedAvailabilityImpact.equals(rhs.modifiedAvailabilityImpact))))&amp;&amp;((this.availabilityRequirement == rhs.availabilityRequirement)||((this.availabilityRequirement!= null)&amp;&amp;this.availabilityRequirement.equals(rhs.availabilityRequirement))))&amp;&amp;((this.modifiedScope == rhs.modifiedScope)||((this.modifiedScope!= null)&amp;&amp;this.modifiedScope.equals(rhs.modifiedScope))))&amp;&amp;((this.attackComplexity == rhs.attackComplexity)||((this.attackComplexity!= null)&amp;&amp;this.attackComplexity.equals(rhs.attackComplexity))))&amp;&amp;((this.scope == rhs.scope)||((this.scope!= null)&amp;&amp;this.scope.equals(rhs.scope))))&amp;&amp;((this.attackVector == rhs.attackVector)||((this.attackVector!= null)&amp;&amp;this.attackVector.equals(rhs.attackVector))))&amp;&amp;((this.integrityImpact == rhs.integrityImpact)||((this.integrityImpact!= null)&amp;&amp;this.integrityImpact.equals(rhs.integrityImpact))))&amp;&amp;((this.modifiedIntegrityImpact == rhs.modifiedIntegrityImpact)||((this.modifiedIntegrityImpact!= null)&amp;&amp;this.modifiedIntegrityImpact.equals(rhs.modifiedIntegrityImpact))))&amp;&amp;((this.vectorString == rhs.vectorString)||((this.vectorString!= null)&amp;&amp;this.vectorString.equals(rhs.vectorString))))&amp;&amp;((this.exploitCodeMaturity == rhs.exploitCodeMaturity)||((this.exploitCodeMaturity!= null)&amp;&amp;this.exploitCodeMaturity.equals(rhs.exploitCodeMaturity))))&amp;&amp;((this.temporalScore == rhs.temporalScore)||((this.temporalScore!= null)&amp;&amp;this.temporalScore.equals(rhs.temporalScore))))&amp;&amp;((this.modifiedAttackVector == rhs.modifiedAttackVector)||((this.modifiedAttackVector!= null)&amp;&amp;this.modifiedAttackVector.equals(rhs.modifiedAttackVector))))&amp;&amp;((this.version == rhs.version)||((this.version!= null)&amp;&amp;this.version.equals(rhs.version))))&amp;&amp;((this.confidentialityRequirement == rhs.confidentialityRequirement)||((this.confidentialityRequirement!= null)&amp;&amp;this.confidentialityRequirement.equals(rhs.confidentialityRequirement))))&amp;&amp;((this.remediationLevel == rhs.remediationLevel)||((this.remediationLevel!= null)&amp;&amp;this.remediationLevel.equals(rhs.remediationLevel))))&amp;&amp;((this.modifiedUserInteraction == rhs.modifiedUserInteraction)||((this.modifiedUserInteraction!= null)&amp;&amp;this.modifiedUserInteraction.equals(rhs.modifiedUserInteraction))))&amp;&amp;((this.modifiedAttackComplexity == rhs.modifiedAttackComplexity)||((this.modifiedAttackComplexity!= null)&amp;&amp;this.modifiedAttackComplexity.equals(rhs.modifiedAttackComplexity))))&amp;&amp;((this.baseSeverity == rhs.baseSeverity)||((this.baseSeverity!= null)&amp;&amp;this.baseSeverity.equals(rhs.baseSeverity))))&amp;&amp;((this.confidentialityImpact == rhs.confidentialityImpact)||((this.confidentialityImpact!= null)&amp;&amp;this.confidentialityImpact.equals(rhs.confidentialityImpact))))&amp;&amp;((this.environmentalScore == rhs.environmentalScore)||((this.environmentalScore!= null)&amp;&amp;this.environmentalScore.equals(rhs.environmentalScore))))&amp;&amp;((this.environmentalSeverity == rhs.environmentalSeverity)||((this.environmentalSeverity!= null)&amp;&amp;this.environmentalSeverity.equals(rhs.environmentalSeverity))));</span>
+    }
+
+<span class="fc" id="L589">    public enum AttackComplexityType {</span>
+
+<span class="fc" id="L591">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L593">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;);
+        private final String value;
+<span class="fc" id="L596">        private final static Map&lt;String, CvssV3X.AttackComplexityType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.AttackComplexityType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L599" title="All 2 branches covered.">            for (CvssV3X.AttackComplexityType c: values()) {</span>
+<span class="fc" id="L600">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L602">        }</span>
+
+<span class="fc" id="L604">        private AttackComplexityType(String value) {</span>
+<span class="fc" id="L605">            this.value = value;</span>
+<span class="fc" id="L606">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L610">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L614">            return this.value;</span>
+        }
+
+        public static CvssV3X.AttackComplexityType fromValue(String value) {
+<span class="nc" id="L618">            CvssV3X.AttackComplexityType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L619" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L620">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L622">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L628">    public enum AttackVectorType {</span>
+
+<span class="fc" id="L630">        @SerializedName(&quot;NETWORK&quot;)</span>
+        NETWORK(&quot;NETWORK&quot;),
+<span class="fc" id="L632">        @SerializedName(&quot;ADJACENT_NETWORK&quot;)</span>
+        ADJACENT_NETWORK(&quot;ADJACENT_NETWORK&quot;),
+<span class="fc" id="L634">        @SerializedName(&quot;LOCAL&quot;)</span>
+        LOCAL(&quot;LOCAL&quot;),
+<span class="fc" id="L636">        @SerializedName(&quot;PHYSICAL&quot;)</span>
+        PHYSICAL(&quot;PHYSICAL&quot;);
+        private final String value;
+<span class="fc" id="L639">        private final static Map&lt;String, CvssV3X.AttackVectorType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.AttackVectorType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L642" title="All 2 branches covered.">            for (CvssV3X.AttackVectorType c: values()) {</span>
+<span class="fc" id="L643">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L645">        }</span>
+
+<span class="fc" id="L647">        private AttackVectorType(String value) {</span>
+<span class="fc" id="L648">            this.value = value;</span>
+<span class="fc" id="L649">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L653">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L657">            return this.value;</span>
+        }
+
+        public static CvssV3X.AttackVectorType fromValue(String value) {
+<span class="nc" id="L661">            CvssV3X.AttackVectorType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L662" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L663">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L665">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L671">    public enum CiaRequirementType {</span>
+
+<span class="fc" id="L673">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L675">        @SerializedName(&quot;MEDIUM&quot;)</span>
+        MEDIUM(&quot;MEDIUM&quot;),
+<span class="fc" id="L677">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L679">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L682">        private final static Map&lt;String, CvssV3X.CiaRequirementType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.CiaRequirementType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L685" title="All 2 branches covered.">            for (CvssV3X.CiaRequirementType c: values()) {</span>
+<span class="fc" id="L686">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L688">        }</span>
+
+<span class="fc" id="L690">        private CiaRequirementType(String value) {</span>
+<span class="fc" id="L691">            this.value = value;</span>
+<span class="fc" id="L692">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L696">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L700">            return this.value;</span>
+        }
+
+        public static CvssV3X.CiaRequirementType fromValue(String value) {
+<span class="nc" id="L704">            CvssV3X.CiaRequirementType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L705" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L706">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L708">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L714">    public enum CiaType {</span>
+
+<span class="fc" id="L716">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L718">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L720">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;);
+        private final String value;
+<span class="fc" id="L723">        private final static Map&lt;String, CvssV3X.CiaType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.CiaType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L726" title="All 2 branches covered.">            for (CvssV3X.CiaType c: values()) {</span>
+<span class="fc" id="L727">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L729">        }</span>
+
+<span class="fc" id="L731">        private CiaType(String value) {</span>
+<span class="fc" id="L732">            this.value = value;</span>
+<span class="fc" id="L733">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L737">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L741">            return this.value;</span>
+        }
+
+        public static CvssV3X.CiaType fromValue(String value) {
+<span class="nc" id="L745">            CvssV3X.CiaType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L746" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L747">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L749">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L755">    public enum ConfidenceType {</span>
+
+<span class="fc" id="L757">        @SerializedName(&quot;UNKNOWN&quot;)</span>
+        UNKNOWN(&quot;UNKNOWN&quot;),
+<span class="fc" id="L759">        @SerializedName(&quot;REASONABLE&quot;)</span>
+        REASONABLE(&quot;REASONABLE&quot;),
+<span class="fc" id="L761">        @SerializedName(&quot;CONFIRMED&quot;)</span>
+        CONFIRMED(&quot;CONFIRMED&quot;),
+<span class="fc" id="L763">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L766">        private final static Map&lt;String, CvssV3X.ConfidenceType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ConfidenceType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L769" title="All 2 branches covered.">            for (CvssV3X.ConfidenceType c: values()) {</span>
+<span class="fc" id="L770">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L772">        }</span>
+
+<span class="fc" id="L774">        private ConfidenceType(String value) {</span>
+<span class="fc" id="L775">            this.value = value;</span>
+<span class="fc" id="L776">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L780">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L784">            return this.value;</span>
+        }
+
+        public static CvssV3X.ConfidenceType fromValue(String value) {
+<span class="nc" id="L788">            CvssV3X.ConfidenceType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L789" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L790">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L792">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L798">    public enum ExploitCodeMaturityType {</span>
+
+<span class="fc" id="L800">        @SerializedName(&quot;UNPROVEN&quot;)</span>
+        UNPROVEN(&quot;UNPROVEN&quot;),
+<span class="fc" id="L802">        @SerializedName(&quot;PROOF_OF_CONCEPT&quot;)</span>
+        PROOF_OF_CONCEPT(&quot;PROOF_OF_CONCEPT&quot;),
+<span class="fc" id="L804">        @SerializedName(&quot;FUNCTIONAL&quot;)</span>
+        FUNCTIONAL(&quot;FUNCTIONAL&quot;),
+<span class="fc" id="L806">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L808">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L811">        private final static Map&lt;String, CvssV3X.ExploitCodeMaturityType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ExploitCodeMaturityType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L814" title="All 2 branches covered.">            for (CvssV3X.ExploitCodeMaturityType c: values()) {</span>
+<span class="fc" id="L815">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L817">        }</span>
+
+<span class="fc" id="L819">        private ExploitCodeMaturityType(String value) {</span>
+<span class="fc" id="L820">            this.value = value;</span>
+<span class="fc" id="L821">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L825">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L829">            return this.value;</span>
+        }
+
+        public static CvssV3X.ExploitCodeMaturityType fromValue(String value) {
+<span class="nc" id="L833">            CvssV3X.ExploitCodeMaturityType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L834" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L835">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L837">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L843">    public enum ModifiedAttackComplexityType {</span>
+
+<span class="fc" id="L845">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L847">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L849">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L852">        private final static Map&lt;String, CvssV3X.ModifiedAttackComplexityType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedAttackComplexityType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L855" title="All 2 branches covered.">            for (CvssV3X.ModifiedAttackComplexityType c: values()) {</span>
+<span class="fc" id="L856">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L858">        }</span>
+
+<span class="fc" id="L860">        private ModifiedAttackComplexityType(String value) {</span>
+<span class="fc" id="L861">            this.value = value;</span>
+<span class="fc" id="L862">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L866">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L870">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedAttackComplexityType fromValue(String value) {
+<span class="nc" id="L874">            CvssV3X.ModifiedAttackComplexityType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L875" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L876">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L878">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L884">    public enum ModifiedAttackVectorType {</span>
+
+<span class="fc" id="L886">        @SerializedName(&quot;NETWORK&quot;)</span>
+        NETWORK(&quot;NETWORK&quot;),
+<span class="fc" id="L888">        @SerializedName(&quot;ADJACENT_NETWORK&quot;)</span>
+        ADJACENT_NETWORK(&quot;ADJACENT_NETWORK&quot;),
+<span class="fc" id="L890">        @SerializedName(&quot;LOCAL&quot;)</span>
+        LOCAL(&quot;LOCAL&quot;),
+<span class="fc" id="L892">        @SerializedName(&quot;PHYSICAL&quot;)</span>
+        PHYSICAL(&quot;PHYSICAL&quot;),
+<span class="fc" id="L894">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L897">        private final static Map&lt;String, CvssV3X.ModifiedAttackVectorType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedAttackVectorType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L900" title="All 2 branches covered.">            for (CvssV3X.ModifiedAttackVectorType c: values()) {</span>
+<span class="fc" id="L901">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L903">        }</span>
+
+<span class="fc" id="L905">        private ModifiedAttackVectorType(String value) {</span>
+<span class="fc" id="L906">            this.value = value;</span>
+<span class="fc" id="L907">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L911">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L915">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedAttackVectorType fromValue(String value) {
+<span class="nc" id="L919">            CvssV3X.ModifiedAttackVectorType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L920" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L921">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L923">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L929">    public enum ModifiedCiaType {</span>
+
+<span class="fc" id="L931">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L933">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L935">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L937">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L940">        private final static Map&lt;String, CvssV3X.ModifiedCiaType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedCiaType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L943" title="All 2 branches covered.">            for (CvssV3X.ModifiedCiaType c: values()) {</span>
+<span class="fc" id="L944">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L946">        }</span>
+
+<span class="fc" id="L948">        private ModifiedCiaType(String value) {</span>
+<span class="fc" id="L949">            this.value = value;</span>
+<span class="fc" id="L950">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L954">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L958">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedCiaType fromValue(String value) {
+<span class="nc" id="L962">            CvssV3X.ModifiedCiaType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L963" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L964">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L966">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L972">    public enum ModifiedPrivilegesRequiredType {</span>
+
+<span class="fc" id="L974">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L976">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L978">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L980">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L983">        private final static Map&lt;String, CvssV3X.ModifiedPrivilegesRequiredType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedPrivilegesRequiredType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L986" title="All 2 branches covered.">            for (CvssV3X.ModifiedPrivilegesRequiredType c: values()) {</span>
+<span class="fc" id="L987">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L989">        }</span>
+
+<span class="fc" id="L991">        private ModifiedPrivilegesRequiredType(String value) {</span>
+<span class="fc" id="L992">            this.value = value;</span>
+<span class="fc" id="L993">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L997">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L1001">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedPrivilegesRequiredType fromValue(String value) {
+<span class="nc" id="L1005">            CvssV3X.ModifiedPrivilegesRequiredType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1006" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1007">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1009">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1015">    public enum ModifiedScopeType {</span>
+
+<span class="fc" id="L1017">        @SerializedName(&quot;UNCHANGED&quot;)</span>
+        UNCHANGED(&quot;UNCHANGED&quot;),
+<span class="fc" id="L1019">        @SerializedName(&quot;CHANGED&quot;)</span>
+        CHANGED(&quot;CHANGED&quot;),
+<span class="fc" id="L1021">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L1024">        private final static Map&lt;String, CvssV3X.ModifiedScopeType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedScopeType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1027" title="All 2 branches covered.">            for (CvssV3X.ModifiedScopeType c: values()) {</span>
+<span class="fc" id="L1028">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1030">        }</span>
+
+<span class="fc" id="L1032">        private ModifiedScopeType(String value) {</span>
+<span class="fc" id="L1033">            this.value = value;</span>
+<span class="fc" id="L1034">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1038">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L1042">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedScopeType fromValue(String value) {
+<span class="nc" id="L1046">            CvssV3X.ModifiedScopeType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1047" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1048">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1050">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1056">    public enum ModifiedUserInteractionType {</span>
+
+<span class="fc" id="L1058">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L1060">        @SerializedName(&quot;REQUIRED&quot;)</span>
+        REQUIRED(&quot;REQUIRED&quot;),
+<span class="fc" id="L1062">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L1065">        private final static Map&lt;String, CvssV3X.ModifiedUserInteractionType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ModifiedUserInteractionType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1068" title="All 2 branches covered.">            for (CvssV3X.ModifiedUserInteractionType c: values()) {</span>
+<span class="fc" id="L1069">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1071">        }</span>
+
+<span class="fc" id="L1073">        private ModifiedUserInteractionType(String value) {</span>
+<span class="fc" id="L1074">            this.value = value;</span>
+<span class="fc" id="L1075">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1079">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L1083">            return this.value;</span>
+        }
+
+        public static CvssV3X.ModifiedUserInteractionType fromValue(String value) {
+<span class="nc" id="L1087">            CvssV3X.ModifiedUserInteractionType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1088" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1089">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1091">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1097">    public enum PrivilegesRequiredType {</span>
+
+<span class="fc" id="L1099">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L1101">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L1103">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;);
+        private final String value;
+<span class="fc" id="L1106">        private final static Map&lt;String, CvssV3X.PrivilegesRequiredType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.PrivilegesRequiredType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1109" title="All 2 branches covered.">            for (CvssV3X.PrivilegesRequiredType c: values()) {</span>
+<span class="fc" id="L1110">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1112">        }</span>
+
+<span class="fc" id="L1114">        private PrivilegesRequiredType(String value) {</span>
+<span class="fc" id="L1115">            this.value = value;</span>
+<span class="fc" id="L1116">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1120">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L1124">            return this.value;</span>
+        }
+
+        public static CvssV3X.PrivilegesRequiredType fromValue(String value) {
+<span class="nc" id="L1128">            CvssV3X.PrivilegesRequiredType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1129" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1130">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1132">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1138">    public enum RemediationLevelType {</span>
+
+<span class="fc" id="L1140">        @SerializedName(&quot;OFFICIAL_FIX&quot;)</span>
+        OFFICIAL_FIX(&quot;OFFICIAL_FIX&quot;),
+<span class="fc" id="L1142">        @SerializedName(&quot;TEMPORARY_FIX&quot;)</span>
+        TEMPORARY_FIX(&quot;TEMPORARY_FIX&quot;),
+<span class="fc" id="L1144">        @SerializedName(&quot;WORKAROUND&quot;)</span>
+        WORKAROUND(&quot;WORKAROUND&quot;),
+<span class="fc" id="L1146">        @SerializedName(&quot;UNAVAILABLE&quot;)</span>
+        UNAVAILABLE(&quot;UNAVAILABLE&quot;),
+<span class="fc" id="L1148">        @SerializedName(&quot;NOT_DEFINED&quot;)</span>
+        NOT_DEFINED(&quot;NOT_DEFINED&quot;);
+        private final String value;
+<span class="fc" id="L1151">        private final static Map&lt;String, CvssV3X.RemediationLevelType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.RemediationLevelType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1154" title="All 2 branches covered.">            for (CvssV3X.RemediationLevelType c: values()) {</span>
+<span class="fc" id="L1155">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1157">        }</span>
+
+<span class="fc" id="L1159">        private RemediationLevelType(String value) {</span>
+<span class="fc" id="L1160">            this.value = value;</span>
+<span class="fc" id="L1161">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1165">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L1169">            return this.value;</span>
+        }
+
+        public static CvssV3X.RemediationLevelType fromValue(String value) {
+<span class="nc" id="L1173">            CvssV3X.RemediationLevelType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1174" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1175">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1177">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1183">    public enum ScopeType {</span>
+
+<span class="fc" id="L1185">        @SerializedName(&quot;UNCHANGED&quot;)</span>
+        UNCHANGED(&quot;UNCHANGED&quot;),
+<span class="fc" id="L1187">        @SerializedName(&quot;CHANGED&quot;)</span>
+        CHANGED(&quot;CHANGED&quot;);
+        private final String value;
+<span class="fc" id="L1190">        private final static Map&lt;String, CvssV3X.ScopeType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.ScopeType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1193" title="All 2 branches covered.">            for (CvssV3X.ScopeType c: values()) {</span>
+<span class="fc" id="L1194">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1196">        }</span>
+
+<span class="fc" id="L1198">        private ScopeType(String value) {</span>
+<span class="fc" id="L1199">            this.value = value;</span>
+<span class="fc" id="L1200">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1204">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L1208">            return this.value;</span>
+        }
+
+        public static CvssV3X.ScopeType fromValue(String value) {
+<span class="nc" id="L1212">            CvssV3X.ScopeType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1213" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1214">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1216">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1222">    public enum SeverityType {</span>
+
+<span class="fc" id="L1224">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L1226">        @SerializedName(&quot;LOW&quot;)</span>
+        LOW(&quot;LOW&quot;),
+<span class="fc" id="L1228">        @SerializedName(&quot;MEDIUM&quot;)</span>
+        MEDIUM(&quot;MEDIUM&quot;),
+<span class="fc" id="L1230">        @SerializedName(&quot;HIGH&quot;)</span>
+        HIGH(&quot;HIGH&quot;),
+<span class="fc" id="L1232">        @SerializedName(&quot;CRITICAL&quot;)</span>
+        CRITICAL(&quot;CRITICAL&quot;);
+        private final String value;
+<span class="fc" id="L1235">        private final static Map&lt;String, CvssV3X.SeverityType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.SeverityType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1238" title="All 2 branches covered.">            for (CvssV3X.SeverityType c: values()) {</span>
+<span class="fc" id="L1239">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1241">        }</span>
+
+<span class="fc" id="L1243">        private SeverityType(String value) {</span>
+<span class="fc" id="L1244">            this.value = value;</span>
+<span class="fc" id="L1245">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1249">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L1253">            return this.value;</span>
+        }
+
+        public static CvssV3X.SeverityType fromValue(String value) {
+<span class="nc" id="L1257">            CvssV3X.SeverityType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1258" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1259">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1261">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1267">    public enum UserInteractionType {</span>
+
+<span class="fc" id="L1269">        @SerializedName(&quot;NONE&quot;)</span>
+        NONE(&quot;NONE&quot;),
+<span class="fc" id="L1271">        @SerializedName(&quot;REQUIRED&quot;)</span>
+        REQUIRED(&quot;REQUIRED&quot;);
+        private final String value;
+<span class="fc" id="L1274">        private final static Map&lt;String, CvssV3X.UserInteractionType&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.UserInteractionType&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1277" title="All 2 branches covered.">            for (CvssV3X.UserInteractionType c: values()) {</span>
+<span class="fc" id="L1278">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1280">        }</span>
+
+<span class="fc" id="L1282">        private UserInteractionType(String value) {</span>
+<span class="fc" id="L1283">            this.value = value;</span>
+<span class="fc" id="L1284">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1288">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="fc" id="L1292">            return this.value;</span>
+        }
+
+        public static CvssV3X.UserInteractionType fromValue(String value) {
+<span class="nc" id="L1296">            CvssV3X.UserInteractionType constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1297" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1298">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1300">                return constant;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L1306">    public enum Version {</span>
+
+<span class="fc" id="L1308">        @SerializedName(&quot;3.0&quot;)</span>
+        _3_0(&quot;3.0&quot;),
+<span class="fc" id="L1310">        @SerializedName(&quot;3.1&quot;)</span>
+        _3_1(&quot;3.1&quot;);
+        private final String value;
+<span class="fc" id="L1313">        private final static Map&lt;String, CvssV3X.Version&gt; CONSTANTS = new HashMap&lt;String, CvssV3X.Version&gt;();</span>
+
+        static {
+<span class="fc bfc" id="L1316" title="All 2 branches covered.">            for (CvssV3X.Version c: values()) {</span>
+<span class="fc" id="L1317">                CONSTANTS.put(c.value, c);</span>
+            }
+<span class="fc" id="L1319">        }</span>
+
+<span class="fc" id="L1321">        private Version(String value) {</span>
+<span class="fc" id="L1322">            this.value = value;</span>
+<span class="fc" id="L1323">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L1327">            return this.value;</span>
+        }
+
+        public String value() {
+<span class="nc" id="L1331">            return this.value;</span>
+        }
+
+        public static CvssV3X.Version fromValue(String value) {
+<span class="nc" id="L1335">            CvssV3X.Version constant = CONSTANTS.get(value);</span>
+<span class="nc bnc" id="L1336" title="All 2 branches missed.">            if (constant == null) {</span>
+<span class="nc" id="L1337">                throw new IllegalArgumentException(value);</span>
+            } else {
+<span class="nc" id="L1339">                return constant;</span>
+            }
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

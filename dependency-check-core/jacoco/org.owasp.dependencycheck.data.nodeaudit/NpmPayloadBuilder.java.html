@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NpmPayloadBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nodeaudit</a> &gt; <span class="el_source">NpmPayloadBuilder.java</span></div><h1>NpmPayloadBuilder.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2017 Steve Springett. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.data.nodeaudit;
+
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
+import javax.annotation.concurrent.ThreadSafe;
+
+/**
+ * Class used to create the payload to submit to the NPM Audit API service.
+ *
+ * @author Steve Springett
+ * @author Jeremy Long
+ */
+@ThreadSafe
+public final class NpmPayloadBuilder {
+
+    /**
+     * Private constructor for utility class.
+     */
+    private NpmPayloadBuilder() {
+        //empty
+    }
+
+    /**
+     * Builds an npm audit API payload.
+     *
+     * @param lockJson the package-lock.json
+     * @param packageJson the package.json
+     * @param dependencyMap a collection of module/version pairs that is
+     * populated while building the payload
+     * @return the npm audit API payload
+     */
+    public static JsonObject build(JsonObject lockJson, JsonObject packageJson, Map&lt;String, String&gt; dependencyMap) {
+<span class="nc" id="L55">        final JsonObjectBuilder payloadBuilder = Json.createObjectBuilder();</span>
+<span class="nc" id="L56">        addProjectInfo(packageJson, payloadBuilder);</span>
+
+        // NPM Audit expects 'requires' to be an object containing key/value
+        // pairs corresponding to the module name (key) and version (value).
+<span class="nc" id="L60">        final JsonObjectBuilder requiresBuilder = Json.createObjectBuilder();</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if(packageJson.containsKey(&quot;dependencies&quot;)){</span>
+<span class="nc" id="L63">            packageJson.getJsonObject(&quot;dependencies&quot;).entrySet()</span>
+<span class="nc" id="L64">                    .stream()</span>
+<span class="nc" id="L65">                    .collect(Collectors.toMap(</span>
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+<span class="nc" id="L68">                            (oldValue, newValue) -&gt; newValue, TreeMap::new))</span>
+<span class="nc" id="L69">                    .entrySet()</span>
+<span class="nc" id="L70">                    .forEach((entry) -&gt; {</span>
+<span class="nc" id="L71">                        requiresBuilder.add(entry.getKey(), entry.getValue());</span>
+<span class="nc" id="L72">                        dependencyMap.put(entry.getKey(), entry.getValue().toString());</span>
+<span class="nc" id="L73">                    });</span>
+        }
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if(packageJson.containsKey(&quot;devDependencies&quot;)){</span>
+<span class="nc" id="L77">            packageJson.getJsonObject(&quot;devDependencies&quot;).entrySet()</span>
+<span class="nc" id="L78">                    .stream()</span>
+<span class="nc" id="L79">                    .collect(Collectors.toMap(</span>
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+<span class="nc" id="L82">                            (oldValue, newValue) -&gt; newValue, TreeMap::new))</span>
+<span class="nc" id="L83">                    .entrySet()</span>
+<span class="nc" id="L84">                    .forEach((entry) -&gt; {</span>
+<span class="nc" id="L85">                        requiresBuilder.add(entry.getKey(), entry.getValue());</span>
+<span class="nc" id="L86">                        dependencyMap.put(entry.getKey(), entry.getValue().toString());</span>
+<span class="nc" id="L87">                    });</span>
+        }
+
+<span class="nc" id="L90">        payloadBuilder.add(&quot;requires&quot;, requiresBuilder.build());</span>
+
+<span class="nc" id="L92">        final JsonObjectBuilder dependenciesBuilder = Json.createObjectBuilder();</span>
+<span class="nc" id="L93">        final JsonObject dependencies = lockJson.getJsonObject(&quot;dependencies&quot;);</span>
+<span class="nc" id="L94">        dependencies.entrySet().forEach((entry) -&gt; {</span>
+<span class="nc" id="L95">            final JsonObject dep = ((JsonObject) entry.getValue());</span>
+<span class="nc" id="L96">            final String version = dep.getString(&quot;version&quot;);</span>
+<span class="nc" id="L97">            dependencyMap.put(entry.getKey(), version);</span>
+<span class="nc" id="L98">            dependenciesBuilder.add(entry.getKey(), buildDependencies(dep, dependencyMap));</span>
+<span class="nc" id="L99">        });</span>
+<span class="nc" id="L100">        payloadBuilder.add(&quot;dependencies&quot;, dependenciesBuilder.build());</span>
+
+<span class="nc" id="L102">        addConstantElements(payloadBuilder);</span>
+<span class="nc" id="L103">        return payloadBuilder.build();</span>
+    }
+
+    /**
+     * Attempts to build the request data for NPM Audit API call. This may
+     * produce a payload that will fail.
+     *
+     * @param packageJson a raw package-lock.json file
+     * @param dependencyMap a collection of module/version pairs that is
+     * populated while building the payload
+     * @return the JSON payload for NPN Audit
+     */
+    public static JsonObject build(JsonObject packageJson, Map&lt;String, String&gt; dependencyMap) {
+<span class="fc" id="L116">        final JsonObjectBuilder payloadBuilder = Json.createObjectBuilder();</span>
+<span class="fc" id="L117">        addProjectInfo(packageJson, payloadBuilder);</span>
+
+        // NPM Audit expects 'requires' to be an object containing key/value
+        // pairs corresponding to the module name (key) and version (value).
+<span class="fc" id="L121">        final JsonObjectBuilder requiresBuilder = Json.createObjectBuilder();</span>
+<span class="fc" id="L122">        final JsonObjectBuilder dependenciesBuilder = Json.createObjectBuilder();</span>
+
+<span class="fc" id="L124">        final JsonObject dependencies = packageJson.getJsonObject(&quot;dependencies&quot;);</span>
+<span class="fc" id="L125">        dependencies.entrySet().forEach((entry) -&gt; {</span>
+            final String version;
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">            if (entry.getValue().getValueType() == JsonValue.ValueType.OBJECT) {</span>
+<span class="fc" id="L128">                final JsonObject dep = ((JsonObject) entry.getValue());</span>
+<span class="fc" id="L129">                version = dep.getString(&quot;version&quot;);</span>
+<span class="fc" id="L130">                dependencyMap.put(entry.getKey(), version);</span>
+<span class="fc" id="L131">                dependenciesBuilder.add(entry.getKey(), buildDependencies(dep, dependencyMap));</span>
+<span class="fc" id="L132">            } else {</span>
+                //TODO I think the following is dead code and no real &quot;dependencies&quot;
+                //     section in a lock file will look like this
+<span class="nc" id="L135">                final String tmp = entry.getValue().toString();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                if (tmp.startsWith(&quot;\&quot;&quot;)) {</span>
+<span class="nc" id="L137">                    version = tmp.substring(1, tmp.length() - 1);</span>
+                } else {
+<span class="nc" id="L139">                    version = tmp;</span>
+                }
+            }
+<span class="fc" id="L142">            requiresBuilder.add(entry.getKey(), &quot;^&quot; + version);</span>
+<span class="fc" id="L143">        });</span>
+<span class="fc" id="L144">        payloadBuilder.add(&quot;requires&quot;, requiresBuilder.build());</span>
+
+<span class="fc" id="L146">        payloadBuilder.add(&quot;dependencies&quot;, dependenciesBuilder.build());</span>
+
+<span class="fc" id="L148">        addConstantElements(payloadBuilder);</span>
+<span class="fc" id="L149">        return payloadBuilder.build();</span>
+    }
+
+    /**
+     * Adds the project name and version to the npm audit API payload.
+     *
+     * @param packageJson a reference to the package-lock.json
+     * @param payloadBuilder a reference to the npm audit API payload builder
+     */
+    private static void addProjectInfo(JsonObject packageJson, final JsonObjectBuilder payloadBuilder) {
+<span class="fc" id="L159">        final String projectName = packageJson.getString(&quot;name&quot;, &quot;&quot;);</span>
+<span class="fc" id="L160">        final String projectVersion = packageJson.getString(&quot;version&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (!projectName.isEmpty()) {</span>
+<span class="fc" id="L162">            payloadBuilder.add(&quot;name&quot;, projectName);</span>
+        }
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (!projectVersion.isEmpty()) {</span>
+<span class="fc" id="L165">            payloadBuilder.add(&quot;version&quot;, projectVersion);</span>
+        }
+<span class="fc" id="L167">    }</span>
+
+    /**
+     * Adds the constant data elements to the npm audit API payload.
+     *
+     * @param payloadBuilder a reference to the npm audit API payload builder
+     */
+    private static void addConstantElements(final JsonObjectBuilder payloadBuilder) {
+<span class="fc" id="L175">        payloadBuilder.add(&quot;install&quot;, Json.createArrayBuilder().build());</span>
+<span class="fc" id="L176">        payloadBuilder.add(&quot;remove&quot;, Json.createArrayBuilder().build());</span>
+<span class="fc" id="L177">        payloadBuilder.add(&quot;metadata&quot;, Json.createObjectBuilder()</span>
+<span class="fc" id="L178">                .add(&quot;npm_version&quot;, &quot;6.9.0&quot;)</span>
+<span class="fc" id="L179">                .add(&quot;node_version&quot;, &quot;v10.5.0&quot;)</span>
+<span class="fc" id="L180">                .add(&quot;platform&quot;, &quot;linux&quot;)</span>
+        );
+<span class="fc" id="L182">    }</span>
+
+    /**
+     * Recursively builds the dependency structure - copying only the needed
+     * items from the package-lock.json into the npm audit API payload.
+     *
+     * @param dep the parent dependency
+     * @param dependencyMap the collection of child dependencies
+     * @return the dependencies structure needed for the npm audit API payload
+     */
+    private static JsonObject buildDependencies(JsonObject dep, Map&lt;String, String&gt; dependencyMap) {
+<span class="fc" id="L193">        final JsonObjectBuilder depBuilder = Json.createObjectBuilder();</span>
+<span class="fc" id="L194">        depBuilder.add(&quot;version&quot;, dep.getString(&quot;version&quot;));</span>
+
+        //not installed package (like, dependency of an optional dependency) doesn't contains integrity
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if(dep.containsKey(&quot;integrity&quot;)){</span>
+<span class="fc" id="L198">            depBuilder.add(&quot;integrity&quot;, dep.getString(&quot;integrity&quot;));</span>
+        }
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        if (dep.containsKey(&quot;requires&quot;)) {</span>
+<span class="fc" id="L201">            depBuilder.add(&quot;requires&quot;, dep.getJsonObject(&quot;requires&quot;));</span>
+        }
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (dep.containsKey(&quot;dependencies&quot;)) {</span>
+<span class="fc" id="L204">            final JsonObjectBuilder dependeciesBuilder = Json.createObjectBuilder();</span>
+<span class="fc" id="L205">            dep.getJsonObject(&quot;dependencies&quot;).entrySet().forEach((entry) -&gt; {</span>
+<span class="fc" id="L206">                final String v = ((JsonObject) entry.getValue()).getString(&quot;version&quot;);</span>
+<span class="fc" id="L207">                dependencyMap.put(entry.getKey(), v);</span>
+<span class="fc" id="L208">                dependeciesBuilder.add(entry.getKey(), buildDependencies((JsonObject) entry.getValue(), dependencyMap));</span>
+<span class="fc" id="L209">            });</span>
+<span class="fc" id="L210">            depBuilder.add(&quot;dependencies&quot;, dependeciesBuilder.build());</span>
+        }
+<span class="fc" id="L212">        return depBuilder.build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

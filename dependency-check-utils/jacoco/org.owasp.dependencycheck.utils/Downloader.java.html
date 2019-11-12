@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Downloader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Utils</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.utils</a> &gt; <span class="el_source">Downloader.java</span></div><h1>Downloader.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-utils.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2012 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import static java.lang.String.format;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
+
+/**
+ * A utility to download files from the Internet.
+ *
+ * @author Jeremy Long
+ * @version $Id: $Id
+ */
+public final class Downloader {
+
+    /**
+     * UTF-8 character set name.
+     */
+<span class="fc" id="L42">    private static final String UTF8 = StandardCharsets.UTF_8.name();</span>
+    /**
+     * The configured settings.
+     */
+    private final Settings settings;
+
+    /**
+     * Constructs a new Downloader object.
+     *
+     * @param settings the configured settings
+     */
+<span class="fc" id="L53">    public Downloader(Settings settings) {</span>
+<span class="fc" id="L54">        this.settings = settings;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * Retrieves a file from a given URL and saves it to the outputPath.
+     *
+     * @param url the URL of the file to download
+     * @param outputPath the path to the save the file to
+     * @throws org.owasp.dependencycheck.utils.DownloadFailedException is thrown
+     * if there is an error downloading the file
+     * @throws TooManyRequestsException thrown when a 429 is received
+     * @throws ResourceNotFoundException thrown when a 404 is received
+     */
+    public void fetchFile(URL url, File outputPath) throws DownloadFailedException, TooManyRequestsException, ResourceNotFoundException {
+<span class="fc" id="L68">        fetchFile(url, outputPath, true);</span>
+<span class="fc" id="L69">    }</span>
+
+    /**
+     * Retrieves a file from a given URL and saves it to the outputPath.
+     *
+     * @param url the URL of the file to download
+     * @param outputPath the path to the save the file to
+     * @param useProxy whether to use the configured proxy when downloading
+     * files
+     * @throws org.owasp.dependencycheck.utils.DownloadFailedException is thrown
+     * if there is an error downloading the file
+     * @throws TooManyRequestsException thrown when a 429 is received
+     * @throws ResourceNotFoundException thrown when a 404 is received
+     */
+    public void fetchFile(URL url, File outputPath, boolean useProxy) throws DownloadFailedException,
+            TooManyRequestsException, ResourceNotFoundException {
+<span class="fc" id="L85">        try (HttpResourceConnection conn = new HttpResourceConnection(settings, useProxy);</span>
+<span class="fc" id="L86">                OutputStream out = new FileOutputStream(outputPath)) {</span>
+<span class="fc" id="L87">            final InputStream in = conn.fetch(url);</span>
+<span class="fc" id="L88">            IOUtils.copy(in, out);</span>
+<span class="nc" id="L89">        } catch (IOException ex) {</span>
+<span class="nc" id="L90">            final String msg = format(&quot;Download failed, unable to copy '%s' to '%s'&quot;, url.toString(), outputPath.getAbsolutePath());</span>
+<span class="nc" id="L91">            throw new DownloadFailedException(msg, ex);</span>
+<span class="fc" id="L92">        }</span>
+<span class="fc" id="L93">    }</span>
+
+    /**
+     * Retrieves a file from a given URL and returns the contents.
+     *
+     * @param url the URL of the file to download
+     * @param useProxy whether to use the configured proxy when downloading
+     * files
+     * @return the content of the file
+     * @throws DownloadFailedException is thrown if there is an error
+     * downloading the file
+     * @throws TooManyRequestsException thrown when a 429 is received
+     * @throws ResourceNotFoundException thrown when a 404 is received
+     */
+    public String fetchContent(URL url, boolean useProxy) throws DownloadFailedException, TooManyRequestsException, ResourceNotFoundException {
+<span class="nc" id="L108">        try (HttpResourceConnection conn = new HttpResourceConnection(settings, useProxy);</span>
+<span class="nc" id="L109">                ByteArrayOutputStream out = new ByteArrayOutputStream()) {</span>
+<span class="nc" id="L110">            final InputStream in = conn.fetch(url);</span>
+<span class="nc" id="L111">            IOUtils.copy(in, out);</span>
+<span class="nc" id="L112">            return out.toString(UTF8);</span>
+<span class="nc" id="L113">        } catch (IOException ex) {</span>
+<span class="nc" id="L114">            final String msg = format(&quot;Download failed, unable to retrieve '%s'&quot;, url.toString());</span>
+<span class="nc" id="L115">            throw new DownloadFailedException(msg, ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseMetricV3.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">BaseMetricV3.java</span></div><h1>BaseMetricV3.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+
+/**
+ * CVSS V3.x score.
+ * 
+ */
+<span class="fc" id="L12">public class BaseMetricV3 {</span>
+
+    /**
+     * JSON Schema for Common Vulnerability Scoring System version 3.x
+     * &lt;p&gt;
+     * 
+     * 
+     */
+    @SerializedName(&quot;cvssV3&quot;)
+    @Expose
+    private CvssV3X cvssV3;
+    /**
+     * CVSS subscore.
+     * 
+     */
+    @SerializedName(&quot;exploitabilityScore&quot;)
+    @Expose
+    private Double exploitabilityScore;
+    /**
+     * CVSS subscore.
+     * 
+     */
+    @SerializedName(&quot;impactScore&quot;)
+    @Expose
+    private Double impactScore;
+
+    /**
+     * JSON Schema for Common Vulnerability Scoring System version 3.x
+     * &lt;p&gt;
+     * 
+     * 
+     */
+    public CvssV3X getCvssV3() {
+<span class="fc" id="L45">        return cvssV3;</span>
+    }
+
+    /**
+     * JSON Schema for Common Vulnerability Scoring System version 3.x
+     * &lt;p&gt;
+     * 
+     * 
+     */
+    public void setCvssV3(CvssV3X cvssV3) {
+<span class="nc" id="L55">        this.cvssV3 = cvssV3;</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * CVSS subscore.
+     * 
+     */
+    public Double getExploitabilityScore() {
+<span class="nc" id="L63">        return exploitabilityScore;</span>
+    }
+
+    /**
+     * CVSS subscore.
+     * 
+     */
+    public void setExploitabilityScore(Double exploitabilityScore) {
+<span class="nc" id="L71">        this.exploitabilityScore = exploitabilityScore;</span>
+<span class="nc" id="L72">    }</span>
+
+    /**
+     * CVSS subscore.
+     * 
+     */
+    public Double getImpactScore() {
+<span class="nc" id="L79">        return impactScore;</span>
+    }
+
+    /**
+     * CVSS subscore.
+     * 
+     */
+    public void setImpactScore(Double impactScore) {
+<span class="nc" id="L87">        this.impactScore = impactScore;</span>
+<span class="nc" id="L88">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L92">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L93">        sb.append(BaseMetricV3 .class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L94">        sb.append(&quot;cvssV3&quot;);</span>
+<span class="nc" id="L95">        sb.append('=');</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        sb.append(((this.cvssV3 == null)?&quot;&lt;null&gt;&quot;:this.cvssV3));</span>
+<span class="nc" id="L97">        sb.append(',');</span>
+<span class="nc" id="L98">        sb.append(&quot;exploitabilityScore&quot;);</span>
+<span class="nc" id="L99">        sb.append('=');</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        sb.append(((this.exploitabilityScore == null)?&quot;&lt;null&gt;&quot;:this.exploitabilityScore));</span>
+<span class="nc" id="L101">        sb.append(',');</span>
+<span class="nc" id="L102">        sb.append(&quot;impactScore&quot;);</span>
+<span class="nc" id="L103">        sb.append('=');</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        sb.append(((this.impactScore == null)?&quot;&lt;null&gt;&quot;:this.impactScore));</span>
+<span class="nc" id="L105">        sb.append(',');</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L107">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L109">            sb.append(']');</span>
+        }
+<span class="nc" id="L111">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L116">        int result = 1;</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        result = ((result* 31)+((this.exploitabilityScore == null)? 0 :this.exploitabilityScore.hashCode()));</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        result = ((result* 31)+((this.cvssV3 == null)? 0 :this.cvssV3 .hashCode()));</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        result = ((result* 31)+((this.impactScore == null)? 0 :this.impactScore.hashCode()));</span>
+<span class="nc" id="L120">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L126">            return true;</span>
+        }
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if ((other instanceof BaseMetricV3) == false) {</span>
+<span class="nc" id="L129">            return false;</span>
+        }
+<span class="nc" id="L131">        BaseMetricV3 rhs = ((BaseMetricV3) other);</span>
+<span class="nc bnc" id="L132" title="All 18 branches missed.">        return ((((this.exploitabilityScore == rhs.exploitabilityScore)||((this.exploitabilityScore!= null)&amp;&amp;this.exploitabilityScore.equals(rhs.exploitabilityScore)))&amp;&amp;((this.cvssV3 == rhs.cvssV3)||((this.cvssV3 != null)&amp;&amp;this.cvssV3 .equals(rhs.cvssV3))))&amp;&amp;((this.impactScore == rhs.impactScore)||((this.impactScore!= null)&amp;&amp;this.impactScore.equals(rhs.impactScore))));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependencyBundlingAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.analyzer</a> &gt; <span class="el_source">DependencyBundlingAnalyzer.java</span></div><h1>DependencyBundlingAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2012 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.analyzer;
+
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.Semver.SemverType;
+import com.vdurmont.semver4j.SemverException;
+import java.io.File;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.concurrent.ThreadSafe;
+import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.Vulnerability;
+import org.owasp.dependencycheck.dependency.naming.Identifier;
+import org.owasp.dependencycheck.utils.DependencyVersion;
+import org.owasp.dependencycheck.utils.DependencyVersionUtil;
+import org.owasp.dependencycheck.utils.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * &lt;p&gt;
+ * This analyzer ensures dependencies that should be grouped together, to remove
+ * excess noise from the report, are grouped. An example would be Spring, Spring
+ * Beans, Spring MVC, etc. If they are all for the same version and have the
+ * same relative path then these should be grouped into a single dependency
+ * under the core/main library.&lt;/p&gt;
+ * &lt;p&gt;
+ * Note, this grouping only works on dependencies with identified CVE
+ * entries&lt;/p&gt;
+ *
+ * @author Jeremy Long
+ */
+@ThreadSafe
+<span class="fc" id="L51">public class DependencyBundlingAnalyzer extends AbstractDependencyComparingAnalyzer {</span>
+
+    /**
+     * The Logger.
+     */
+<span class="fc" id="L56">    private static final Logger LOGGER = LoggerFactory.getLogger(DependencyBundlingAnalyzer.class);</span>
+
+    /**
+     * A pattern for obtaining the first part of a filename.
+     */
+<span class="fc" id="L61">    private static final Pattern STARTING_TEXT_PATTERN = Pattern.compile(&quot;^[a-zA-Z0-9]*&quot;);</span>
+
+    /**
+     * The name of the analyzer.
+     */
+    private static final String ANALYZER_NAME = &quot;Dependency Bundling Analyzer&quot;;
+    /**
+     * The phase that this analyzer is intended to run in.
+     */
+<span class="fc" id="L70">    private static final AnalysisPhase ANALYSIS_PHASE = AnalysisPhase.FINAL;</span>
+
+    /**
+     * Returns the name of the analyzer.
+     *
+     * @return the name of the analyzer.
+     */
+    @Override
+    public String getName() {
+<span class="fc" id="L79">        return ANALYZER_NAME;</span>
+    }
+
+    /**
+     * Returns the phase that the analyzer is intended to run in.
+     *
+     * @return the phase that the analyzer is intended to run in.
+     */
+    @Override
+    public AnalysisPhase getAnalysisPhase() {
+<span class="fc" id="L89">        return ANALYSIS_PHASE;</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns the setting key to determine if the analyzer is enabled.&lt;/p&gt;
+     *
+     * @return the key for the analyzer's enabled property
+     */
+    @Override
+    protected String getAnalyzerEnabledSettingKey() {
+<span class="fc" id="L100">        return Settings.KEYS.ANALYZER_DEPENDENCY_BUNDLING_ENABLED;</span>
+    }
+
+    /**
+     * Evaluates the dependencies
+     *
+     * @param dependency a dependency to compare
+     * @param nextDependency a dependency to compare
+     * @param dependenciesToRemove a set of dependencies that will be removed
+     * @return true if a dependency is removed; otherwise false
+     */
+    @Override
+    protected boolean evaluateDependencies(final Dependency dependency, final Dependency nextDependency, final Set&lt;Dependency&gt; dependenciesToRemove) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        if (hashesMatch(dependency, nextDependency)) {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (!containedInWar(dependency.getFilePath())</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    &amp;&amp; !containedInWar(nextDependency.getFilePath())) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                if (firstPathIsShortest(dependency.getFilePath(), nextDependency.getFilePath())) {</span>
+<span class="nc" id="L117">                    mergeDependencies(dependency, nextDependency, dependenciesToRemove);</span>
+                } else {
+<span class="nc" id="L119">                    mergeDependencies(nextDependency, dependency, dependenciesToRemove);</span>
+<span class="nc" id="L120">                    return true; //since we merged into the next dependency - skip forward to the next in mainIterator</span>
+                }
+            }
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        } else if (isShadedJar(dependency, nextDependency)) {</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            if (dependency.getFileName().toLowerCase().endsWith(&quot;pom.xml&quot;)) {</span>
+<span class="nc" id="L125">                mergeDependencies(nextDependency, dependency, dependenciesToRemove);</span>
+<span class="nc" id="L126">                nextDependency.removeRelatedDependencies(dependency);</span>
+<span class="nc" id="L127">                return true;</span>
+            } else {
+<span class="fc" id="L129">                mergeDependencies(dependency, nextDependency, dependenciesToRemove);</span>
+<span class="fc" id="L130">                dependency.removeRelatedDependencies(nextDependency);</span>
+            }
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        } else if (cpeIdentifiersMatch(dependency, nextDependency)</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                &amp;&amp; hasSameBasePath(dependency, nextDependency)</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                &amp;&amp; vulnerabilitiesMatch(dependency, nextDependency)</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                &amp;&amp; fileNameMatch(dependency, nextDependency)) {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (isCore(dependency, nextDependency)) {</span>
+<span class="fc" id="L137">                mergeDependencies(dependency, nextDependency, dependenciesToRemove);</span>
+            } else {
+<span class="fc" id="L139">                mergeDependencies(nextDependency, dependency, dependenciesToRemove);</span>
+<span class="fc" id="L140">                return true; //since we merged into the next dependency - skip forward to the next in mainIterator</span>
+            }
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        } else if (ecoSystemIs(AbstractNpmAnalyzer.NPM_DEPENDENCY_ECOSYSTEM, dependency, nextDependency)</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                &amp;&amp; namesAreEqual(dependency, nextDependency)</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                &amp;&amp; npmVersionsMatch(dependency.getVersion(), nextDependency.getVersion())) {</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (!dependency.isVirtual()) {</span>
+<span class="nc" id="L147">                DependencyMergingAnalyzer.mergeDependencies(dependency, nextDependency, dependenciesToRemove);</span>
+            } else {
+<span class="nc" id="L149">                DependencyMergingAnalyzer.mergeDependencies(nextDependency, dependency, dependenciesToRemove);</span>
+<span class="nc" id="L150">                return true;</span>
+            }
+        }
+<span class="fc" id="L153">        return false;</span>
+    }
+
+    /**
+     * Adds the relatedDependency to the dependency's related dependencies.
+     *
+     * @param dependency the main dependency
+     * @param relatedDependency a collection of dependencies to be removed from
+     * the main analysis loop, this is the source of dependencies to remove
+     * @param dependenciesToRemove a collection of dependencies that will be
+     * removed from the main analysis loop, this function adds to this
+     * collection
+     */
+    public static void mergeDependencies(final Dependency dependency,
+            final Dependency relatedDependency, final Set&lt;Dependency&gt; dependenciesToRemove) {
+<span class="fc" id="L168">        dependency.addRelatedDependency(relatedDependency);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (Dependency d : relatedDependency.getRelatedDependencies()) {</span>
+<span class="fc" id="L170">            dependency.addRelatedDependency(d);</span>
+<span class="fc" id="L171">            relatedDependency.removeRelatedDependencies(d);</span>
+<span class="fc" id="L172">        }</span>
+        //TODO this null check was added for #1296 - but I believe this to be related to virtual dependencies
+        //  we may want to merge project references on virtual dependencies...
+<span class="pc bpc" id="L175" title="2 of 4 branches missed.">        if (dependency.getSha1sum() != null &amp;&amp; dependency.getSha1sum().equals(relatedDependency.getSha1sum())) {</span>
+<span class="nc" id="L176">            dependency.addAllProjectReferences(relatedDependency.getProjectReferences());</span>
+        }
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (dependenciesToRemove != null) {</span>
+<span class="fc" id="L179">            dependenciesToRemove.add(relatedDependency);</span>
+        }
+<span class="fc" id="L181">    }</span>
+
+    /**
+     * Attempts to trim a maven repo to a common base path. This is typically
+     * [drive]\[repo_location]\repository\[path1]\[path2].
+     *
+     * @param path the path to trim
+     * @return a string representing the base path.
+     */
+    private String getBaseRepoPath(final String path) {
+        int pos;
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (path.contains(&quot;local-repo&quot;)) {</span>
+<span class="nc" id="L193">            pos = path.indexOf(&quot;local-repo&quot; + File.separator) + 11;</span>
+        } else {
+<span class="nc" id="L195">            pos = path.indexOf(&quot;repository&quot; + File.separator) + 11;</span>
+        }
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (pos &lt; 0) {</span>
+<span class="nc" id="L198">            return path;</span>
+        }
+<span class="nc" id="L200">        int tmp = path.indexOf(File.separator, pos);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (tmp &lt;= 0) {</span>
+<span class="nc" id="L202">            return path;</span>
+        }
+        //below is always true
+        //if (tmp &gt; 0) {
+<span class="nc" id="L206">        pos = tmp + 1;</span>
+        //}
+<span class="nc" id="L208">        tmp = path.indexOf(File.separator, pos);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (tmp &gt; 0) {</span>
+<span class="nc" id="L210">            pos = tmp + 1;</span>
+        }
+<span class="nc" id="L212">        return path.substring(0, pos);</span>
+    }
+
+    /**
+     * Returns true if the file names (and version if it exists) of the two
+     * dependencies are sufficiently similar.
+     *
+     * @param dependency1 a dependency2 to compare
+     * @param dependency2 a dependency2 to compare
+     * @return true if the identifiers in the two supplied dependencies are
+     * equal
+     */
+    private boolean fileNameMatch(Dependency dependency1, Dependency dependency2) {
+<span class="pc bpc" id="L225" title="3 of 6 branches missed.">        if (dependency1 == null || dependency1.getFileName() == null</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">                || dependency2 == null || dependency2.getFileName() == null) {</span>
+<span class="nc" id="L227">            return false;</span>
+        }
+<span class="fc" id="L229">        final String fileName1 = dependency1.getActualFile().getName();</span>
+<span class="fc" id="L230">        final String fileName2 = dependency2.getActualFile().getName();</span>
+
+        //version check
+<span class="fc" id="L233">        final DependencyVersion version1 = DependencyVersionUtil.parseVersion(fileName1);</span>
+<span class="fc" id="L234">        final DependencyVersion version2 = DependencyVersionUtil.parseVersion(fileName2);</span>
+<span class="pc bpc" id="L235" title="3 of 6 branches missed.">        if (version1 != null &amp;&amp; version2 != null &amp;&amp; !version1.equals(version2)) {</span>
+<span class="nc" id="L236">            return false;</span>
+        }
+
+        //filename check
+<span class="fc" id="L240">        final Matcher match1 = STARTING_TEXT_PATTERN.matcher(fileName1);</span>
+<span class="fc" id="L241">        final Matcher match2 = STARTING_TEXT_PATTERN.matcher(fileName2);</span>
+<span class="pc bpc" id="L242" title="2 of 4 branches missed.">        if (match1.find() &amp;&amp; match2.find()) {</span>
+<span class="fc" id="L243">            return match1.group().equals(match2.group());</span>
+        }
+
+<span class="nc" id="L246">        return false;</span>
+    }
+
+    /**
+     * Returns true if the CPE identifiers in the two supplied dependencies are
+     * equal.
+     *
+     * @param dependency1 a dependency2 to compare
+     * @param dependency2 a dependency2 to compare
+     * @return true if the identifiers in the two supplied dependencies are
+     * equal
+     */
+    private boolean cpeIdentifiersMatch(Dependency dependency1, Dependency dependency2) {
+<span class="pc bpc" id="L259" title="3 of 6 branches missed.">        if (dependency1 == null || dependency1.getVulnerableSoftwareIdentifiers() == null</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">                || dependency2 == null || dependency2.getVulnerableSoftwareIdentifiers() == null) {</span>
+<span class="nc" id="L261">            return false;</span>
+        }
+<span class="fc" id="L263">        boolean matches = false;</span>
+<span class="fc" id="L264">        final int cpeCount1 = dependency1.getVulnerableSoftwareIdentifiers().size();</span>
+<span class="fc" id="L265">        final int cpeCount2 = dependency2.getVulnerableSoftwareIdentifiers().size();</span>
+<span class="fc bfc" id="L266" title="All 4 branches covered.">        if (cpeCount1 &gt; 0 &amp;&amp; cpeCount1 == cpeCount2) {</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            for (Identifier i : dependency1.getVulnerableSoftwareIdentifiers()) {</span>
+<span class="fc" id="L268">                matches |= dependency2.getVulnerableSoftwareIdentifiers().contains(i);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                if (!matches) {</span>
+<span class="fc" id="L270">                    break;</span>
+                }
+<span class="fc" id="L272">            }</span>
+        }
+<span class="fc" id="L274">        LOGGER.debug(&quot;IdentifiersMatch={} ({}, {})&quot;, matches, dependency1.getFileName(), dependency2.getFileName());</span>
+<span class="fc" id="L275">        return matches;</span>
+    }
+
+    /**
+     * Returns true if the two dependencies have the same vulnerabilities.
+     *
+     * @param dependency1 a dependency2 to compare
+     * @param dependency2 a dependency2 to compare
+     * @return true if the two dependencies have the same vulnerabilities
+     */
+    private boolean vulnerabilitiesMatch(Dependency dependency1, Dependency dependency2) {
+<span class="fc" id="L286">        final Set&lt;Vulnerability&gt; one = dependency1.getVulnerabilities();</span>
+<span class="fc" id="L287">        final Set&lt;Vulnerability&gt; two = dependency2.getVulnerabilities();</span>
+<span class="pc bpc" id="L288" title="2 of 4 branches missed.">        return one != null &amp;&amp; two != null</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">                &amp;&amp; one.size() == two.size()</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">                &amp;&amp; one.containsAll(two);</span>
+    }
+
+    /**
+     * Determines if the two dependencies have the same base path.
+     *
+     * @param dependency1 a Dependency object
+     * @param dependency2 a Dependency object
+     * @return true if the base paths of the dependencies are identical
+     */
+    private boolean hasSameBasePath(Dependency dependency1, Dependency dependency2) {
+<span class="pc bpc" id="L301" title="2 of 4 branches missed.">        if (dependency1 == null || dependency2 == null) {</span>
+<span class="nc" id="L302">            return false;</span>
+        }
+<span class="fc" id="L304">        final File lFile = new File(dependency1.getFilePath());</span>
+<span class="fc" id="L305">        String left = lFile.getParent();</span>
+<span class="fc" id="L306">        final File rFile = new File(dependency2.getFilePath());</span>
+<span class="fc" id="L307">        String right = rFile.getParent();</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">        if (left == null) {</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            return right == null;</span>
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">        } else if (right == null) {</span>
+<span class="nc" id="L311">            return false;</span>
+        }
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (left.equalsIgnoreCase(right)) {</span>
+<span class="fc" id="L314">            return true;</span>
+        }
+
+<span class="pc bpc" id="L317" title="3 of 4 branches missed.">        if (left.matches(&quot;.*[/\\\\](repository|local-repo)[/\\\\].*&quot;) &amp;&amp; right.matches(&quot;.*[/\\\\](repository|local-repo)[/\\\\].*&quot;)) {</span>
+<span class="nc" id="L318">            left = getBaseRepoPath(left);</span>
+<span class="nc" id="L319">            right = getBaseRepoPath(right);</span>
+        }
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">        if (left.equalsIgnoreCase(right)) {</span>
+<span class="nc" id="L322">            return true;</span>
+        }
+        //new code
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">        for (Dependency child : dependency2.getRelatedDependencies()) {</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if (hasSameBasePath(child, dependency1)) {</span>
+<span class="nc" id="L327">                return true;</span>
+            }
+<span class="nc" id="L329">        }</span>
+<span class="fc" id="L330">        return false;</span>
+    }
+
+    /**
+     * This is likely a very broken attempt at determining if the 'left'
+     * dependency is the 'core' library in comparison to the 'right' library.
+     *
+     * @param left the dependency to test
+     * @param right the dependency to test against
+     * @return a boolean indicating whether or not the left dependency should be
+     * considered the &quot;core&quot; version.
+     */
+    protected boolean isCore(Dependency left, Dependency right) {
+<span class="fc" id="L343">        final String leftName = left.getFileName().toLowerCase();</span>
+<span class="fc" id="L344">        final String rightName = right.getFileName().toLowerCase();</span>
+
+        final boolean returnVal;
+        //TODO - should we get rid of this merging? It removes a true BOM...
+
+<span class="pc bpc" id="L349" title="3 of 4 branches missed.">        if (left.isVirtual() &amp;&amp; !right.isVirtual()) {</span>
+<span class="nc" id="L350">            returnVal = true;</span>
+<span class="pc bpc" id="L351" title="2 of 4 branches missed.">        } else if (!left.isVirtual() &amp;&amp; right.isVirtual()) {</span>
+<span class="nc" id="L352">            returnVal = false;</span>
+<span class="pc bpc" id="L353" title="1 of 4 branches missed.">        } else if ((!rightName.matches(&quot;.*\\.(tar|tgz|gz|zip|ear|war).+&quot;) &amp;&amp; leftName.matches(&quot;.*\\.(tar|tgz|gz|zip|ear|war).+&quot;))</span>
+<span class="pc bpc" id="L354" title="1 of 4 branches missed.">                || (rightName.contains(&quot;core&quot;) &amp;&amp; !leftName.contains(&quot;core&quot;))</span>
+<span class="pc bpc" id="L355" title="3 of 4 branches missed.">                || (rightName.contains(&quot;kernel&quot;) &amp;&amp; !leftName.contains(&quot;kernel&quot;))</span>
+<span class="pc bpc" id="L356" title="3 of 4 branches missed.">                || (rightName.contains(&quot;server&quot;) &amp;&amp; !leftName.contains(&quot;server&quot;))</span>
+<span class="pc bpc" id="L357" title="3 of 4 branches missed.">                || (rightName.contains(&quot;project&quot;) &amp;&amp; !leftName.contains(&quot;project&quot;))</span>
+<span class="pc bpc" id="L358" title="3 of 4 branches missed.">                || (rightName.contains(&quot;engine&quot;) &amp;&amp; !leftName.contains(&quot;engine&quot;))</span>
+<span class="pc bpc" id="L359" title="3 of 4 branches missed.">                || (rightName.contains(&quot;akka-stream&quot;) &amp;&amp; !leftName.contains(&quot;akka-stream&quot;))</span>
+<span class="pc bpc" id="L360" title="3 of 4 branches missed.">                || (rightName.contains(&quot;netty-transport&quot;) &amp;&amp; !leftName.contains(&quot;netty-transport&quot;))) {</span>
+<span class="fc" id="L361">            returnVal = false;</span>
+<span class="pc bpc" id="L362" title="1 of 4 branches missed.">        } else if ((rightName.matches(&quot;.*\\.(tar|tgz|gz|zip|ear|war).+&quot;) &amp;&amp; !leftName.matches(&quot;.*\\.(tar|tgz|gz|zip|ear|war).+&quot;))</span>
+<span class="pc bpc" id="L363" title="1 of 4 branches missed.">                || (!rightName.contains(&quot;core&quot;) &amp;&amp; leftName.contains(&quot;core&quot;))</span>
+<span class="pc bpc" id="L364" title="1 of 4 branches missed.">                || (!rightName.contains(&quot;kernel&quot;) &amp;&amp; leftName.contains(&quot;kernel&quot;))</span>
+<span class="pc bpc" id="L365" title="2 of 4 branches missed.">                || (!rightName.contains(&quot;server&quot;) &amp;&amp; leftName.contains(&quot;server&quot;))</span>
+<span class="pc bpc" id="L366" title="2 of 4 branches missed.">                || (!rightName.contains(&quot;project&quot;) &amp;&amp; leftName.contains(&quot;project&quot;))</span>
+<span class="pc bpc" id="L367" title="2 of 4 branches missed.">                || (!rightName.contains(&quot;engine&quot;) &amp;&amp; leftName.contains(&quot;engine&quot;))</span>
+<span class="pc bpc" id="L368" title="2 of 4 branches missed.">                || (!rightName.contains(&quot;akka-stream&quot;) &amp;&amp; leftName.contains(&quot;akka-stream&quot;))</span>
+<span class="pc bpc" id="L369" title="2 of 4 branches missed.">                || (!rightName.contains(&quot;netty-transport&quot;) &amp;&amp; leftName.contains(&quot;netty-transport&quot;))) {</span>
+<span class="fc" id="L370">            returnVal = true;</span>
+        } else {
+            /*
+             * considered splitting the names up and comparing the components,
+             * but decided that the file name length should be sufficient as the
+             * &quot;core&quot; component, if this follows a normal naming protocol should
+             * be shorter:
+             * axis2-saaj-1.4.1.jar
+             * axis2-1.4.1.jar       &lt;-----
+             * axis2-kernel-1.4.1.jar
+             */
+<span class="fc bfc" id="L381" title="All 2 branches covered.">            returnVal = leftName.length() &lt;= rightName.length();</span>
+        }
+<span class="fc" id="L383">        LOGGER.debug(&quot;IsCore={} ({}, {})&quot;, returnVal, left.getFileName(), right.getFileName());</span>
+<span class="fc" id="L384">        return returnVal;</span>
+    }
+
+    /**
+     * Compares the SHA1 hashes of two dependencies to determine if they are
+     * equal.
+     *
+     * @param dependency1 a dependency object to compare
+     * @param dependency2 a dependency object to compare
+     * @return true if the sha1 hashes of the two dependencies match; otherwise
+     * false
+     */
+    private boolean hashesMatch(Dependency dependency1, Dependency dependency2) {
+<span class="pc bpc" id="L397" title="4 of 8 branches missed.">        if (dependency1 == null || dependency2 == null || dependency1.getSha1sum() == null || dependency2.getSha1sum() == null) {</span>
+<span class="nc" id="L398">            return false;</span>
+        }
+<span class="fc" id="L400">        return dependency1.getSha1sum().equals(dependency2.getSha1sum());</span>
+    }
+
+    /**
+     * Determines if the jar is shaded and the created pom.xml identified the
+     * same CPE as the jar - if so, the pom.xml dependency should be removed.
+     *
+     * @param dependency a dependency to check
+     * @param nextDependency another dependency to check
+     * @return true if on of the dependencies is a pom.xml and the identifiers
+     * between the two collections match; otherwise false
+     */
+    protected boolean isShadedJar(Dependency dependency, Dependency nextDependency) {
+<span class="fc bfc" id="L413" title="All 6 branches covered.">        if (dependency == null || dependency.getFileName() == null</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">                || nextDependency == null || nextDependency.getFileName() == null</span>
+<span class="fc bfc" id="L415" title="All 2 branches covered.">                || dependency.getSoftwareIdentifiers().isEmpty()</span>
+<span class="fc bfc" id="L416" title="All 2 branches covered.">                || nextDependency.getSoftwareIdentifiers().isEmpty()) {</span>
+<span class="fc" id="L417">            return false;</span>
+        }
+<span class="fc" id="L419">        final String mainName = dependency.getFileName().toLowerCase();</span>
+<span class="fc" id="L420">        final String nextName = nextDependency.getFileName().toLowerCase();</span>
+<span class="fc bfc" id="L421" title="All 4 branches covered.">        if (mainName.endsWith(&quot;.jar&quot;) &amp;&amp; nextName.endsWith(&quot;pom.xml&quot;)) {</span>
+<span class="fc" id="L422">            return dependency.getSoftwareIdentifiers().containsAll(nextDependency.getSoftwareIdentifiers());</span>
+<span class="fc bfc" id="L423" title="All 4 branches covered.">        } else if (nextName.endsWith(&quot;.jar&quot;) &amp;&amp; mainName.endsWith(&quot;pom.xml&quot;)) {</span>
+<span class="fc" id="L424">            return nextDependency.getSoftwareIdentifiers().containsAll(dependency.getSoftwareIdentifiers());</span>
+        }
+<span class="fc" id="L426">        return false;</span>
+    }
+
+    /**
+     * Determines which path is shortest; if path lengths are equal then we use
+     * compareTo of the string method to determine if the first path is smaller.
+     *
+     * @param left the first path to compare
+     * @param right the second path to compare
+     * @return &lt;code&gt;true&lt;/code&gt; if the leftPath is the shortest; otherwise
+     * &lt;code&gt;false&lt;/code&gt;
+     */
+    protected boolean firstPathIsShortest(String left, String right) {
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">        if (left.contains(&quot;dctemp&quot;)) {</span>
+<span class="nc" id="L440">            return false;</span>
+        }
+<span class="fc" id="L442">        final String leftPath = left.replace('\\', '/');</span>
+<span class="fc" id="L443">        final String rightPath = right.replace('\\', '/');</span>
+
+<span class="fc" id="L445">        final int leftCount = countChar(leftPath, '/');</span>
+<span class="fc" id="L446">        final int rightCount = countChar(rightPath, '/');</span>
+<span class="fc bfc" id="L447" title="All 2 branches covered.">        if (leftCount == rightCount) {</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">            return leftPath.compareTo(rightPath) &lt;= 0;</span>
+        } else {
+<span class="fc bfc" id="L450" title="All 2 branches covered.">            return leftCount &lt; rightCount;</span>
+        }
+    }
+
+    /**
+     * Counts the number of times the character is present in the string.
+     *
+     * @param string the string to count the characters in
+     * @param c the character to count
+     * @return the number of times the character is present in the string
+     */
+    private int countChar(String string, char c) {
+<span class="fc" id="L462">        int count = 0;</span>
+<span class="fc" id="L463">        final int max = string.length();</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">        for (int i = 0; i &lt; max; i++) {</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">            if (c == string.charAt(i)) {</span>
+<span class="fc" id="L466">                count++;</span>
+            }
+        }
+<span class="fc" id="L469">        return count;</span>
+    }
+
+    /**
+     * Checks if the given file path is contained within a war or ear file.
+     *
+     * @param filePath the file path to check
+     * @return true if the path contains '.war\' or '.ear\'.
+     */
+    private boolean containedInWar(String filePath) {
+<span class="nc bnc" id="L479" title="All 4 branches missed.">        return filePath != null &amp;&amp; filePath.matches(&quot;.*\\.(ear|war)[\\\\/].*&quot;);</span>
+    }
+
+    /**
+     * Determine if the dependency ecosystem is equal in the given dependencies.
+     *
+     * @param ecoSystem the ecosystem to validate against
+     * @param dependency a dependency to compare
+     * @param nextDependency a dependency to compare
+     * @return true if the ecosystem is equal in both dependencies; otherwise
+     * false
+     */
+    private boolean ecoSystemIs(String ecoSystem, Dependency dependency, Dependency nextDependency) {
+<span class="pc bpc" id="L492" title="3 of 4 branches missed.">        return ecoSystem.equals(dependency.getEcosystem()) &amp;&amp; ecoSystem.equals(nextDependency.getEcosystem());</span>
+    }
+
+    /**
+     * Determine if the dependency name is equal in the given dependencies.
+     *
+     * @param dependency a dependency to compare
+     * @param nextDependency a dependency to compare
+     * @return true if the name is equal in both dependencies; otherwise false
+     */
+    private boolean namesAreEqual(Dependency dependency, Dependency nextDependency) {
+<span class="nc bnc" id="L503" title="All 4 branches missed.">        return dependency.getName() != null &amp;&amp; dependency.getName().equals(nextDependency.getName());</span>
+    }
+
+    /**
+     * Determine if the dependency version is equal in the given dependencies.
+     * This method attempts to evaluate version range checks.
+     *
+     * @param current a dependency version to compare
+     * @param next a dependency version to compare
+     * @return true if the version is equal in both dependencies; otherwise
+     * false
+     */
+    public static boolean npmVersionsMatch(String current, String next) {
+<span class="nc" id="L516">        String left = current;</span>
+<span class="nc" id="L517">        String right = next;</span>
+<span class="nc bnc" id="L518" title="All 4 branches missed.">        if (left == null || right == null) {</span>
+<span class="nc" id="L519">            return false;</span>
+        }
+<span class="nc bnc" id="L521" title="All 6 branches missed.">        if (left.equals(right) || &quot;*&quot;.equals(left) || &quot;*&quot;.equals(right)) {</span>
+<span class="nc" id="L522">            return true;</span>
+        }
+<span class="nc bnc" id="L524" title="All 2 branches missed.">        if (left.contains(&quot; &quot;)) { // we have a version string from package.json</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">            if (right.contains(&quot; &quot;)) { // we can't evaluate this &quot;&gt;=1.5.4 &lt;2.0.0&quot; vs &quot;2 || 3&quot;</span>
+<span class="nc" id="L526">                return false;</span>
+            }
+<span class="nc bnc" id="L528" title="All 2 branches missed.">            if (!right.matches(&quot;^\\d.*$&quot;)) {</span>
+<span class="nc" id="L529">                right = stripLeadingNonNumeric(right);</span>
+<span class="nc bnc" id="L530" title="All 2 branches missed.">                if (right == null) {</span>
+<span class="nc" id="L531">                    return false;</span>
+                }
+            }
+            try {
+<span class="nc" id="L535">                final Semver v = new Semver(right, SemverType.NPM);</span>
+<span class="nc" id="L536">                return v.satisfies(left);</span>
+<span class="nc" id="L537">            } catch (SemverException ex) {</span>
+<span class="nc" id="L538">                LOGGER.trace(&quot;ignore&quot;, ex);</span>
+<span class="nc" id="L539">            }</span>
+        } else {
+<span class="nc bnc" id="L541" title="All 2 branches missed.">            if (!left.matches(&quot;^\\d.*$&quot;)) {</span>
+<span class="nc" id="L542">                left = stripLeadingNonNumeric(left);</span>
+<span class="nc bnc" id="L543" title="All 4 branches missed.">                if (left == null || left.isEmpty()) {</span>
+<span class="nc" id="L544">                    return false;</span>
+                }
+            }
+            try {
+<span class="nc" id="L548">                Semver v = new Semver(left, SemverType.NPM);</span>
+<span class="nc bnc" id="L549" title="All 4 branches missed.">                if (!right.isEmpty() &amp;&amp; v.satisfies(right)) {</span>
+<span class="nc" id="L550">                    return true;</span>
+                }
+<span class="nc bnc" id="L552" title="All 2 branches missed.">                if (!right.contains(&quot; &quot;)) {</span>
+<span class="nc" id="L553">                    left = current;</span>
+<span class="nc" id="L554">                    right = stripLeadingNonNumeric(right);</span>
+<span class="nc bnc" id="L555" title="All 2 branches missed.">                    if (right != null) {</span>
+<span class="nc" id="L556">                        v = new Semver(right, SemverType.NPM);</span>
+<span class="nc" id="L557">                        return v.satisfies(left);</span>
+                    }
+                }
+<span class="nc" id="L560">            } catch (SemverException ex) {</span>
+<span class="nc" id="L561">                LOGGER.trace(&quot;ignore&quot;, ex);</span>
+<span class="nc" id="L562">            } catch (NullPointerException ex) {</span>
+<span class="nc" id="L563">                LOGGER.error(&quot;SemVer comparison error: left:\&quot;{}\&quot;, right:\&quot;{}\&quot;&quot;, left, right);</span>
+<span class="nc" id="L564">                LOGGER.debug(&quot;SemVer comparison resulted in NPE&quot;, ex);</span>
+<span class="nc" id="L565">            }</span>
+        }
+<span class="nc" id="L567">        return false;</span>
+    }
+
+    /**
+     * Strips leading non-numeric values from the start of the string. If no
+     * numbers are present this will return null.
+     *
+     * @param str the string to modify
+     * @return the string without leading non-numeric characters
+     */
+    private static String stripLeadingNonNumeric(String str) {
+<span class="nc bnc" id="L578" title="All 2 branches missed.">        for (int x = 0; x &lt; str.length(); x++) {</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">            if (Character.isDigit(str.codePointAt(x))) {</span>
+<span class="nc" id="L580">                return str.substring(x);</span>
+            }
+        }
+<span class="nc" id="L583">        return null;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

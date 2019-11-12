@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VersionDatum.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.nvd.json</a> &gt; <span class="el_source">VersionDatum.java</span></div><h1>VersionDatum.java</h1><pre class="source lang-java linenums">
+package org.owasp.dependencycheck.data.nvd.json;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+<span class="fc" id="L7">public class VersionDatum {</span>
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    @SerializedName(&quot;version_value&quot;)
+    @Expose
+    private String versionValue;
+    @SerializedName(&quot;version_affected&quot;)
+    @Expose
+    private String versionAffected;
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public String getVersionValue() {
+<span class="nc" id="L27">        return versionValue;</span>
+    }
+
+    /**
+     * 
+     * (Required)
+     * 
+     */
+    public void setVersionValue(String versionValue) {
+<span class="nc" id="L36">        this.versionValue = versionValue;</span>
+<span class="nc" id="L37">    }</span>
+
+    public String getVersionAffected() {
+<span class="nc" id="L40">        return versionAffected;</span>
+    }
+
+    public void setVersionAffected(String versionAffected) {
+<span class="nc" id="L44">        this.versionAffected = versionAffected;</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L49">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L50">        sb.append(VersionDatum.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');</span>
+<span class="nc" id="L51">        sb.append(&quot;versionValue&quot;);</span>
+<span class="nc" id="L52">        sb.append('=');</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        sb.append(((this.versionValue == null)?&quot;&lt;null&gt;&quot;:this.versionValue));</span>
+<span class="nc" id="L54">        sb.append(',');</span>
+<span class="nc" id="L55">        sb.append(&quot;versionAffected&quot;);</span>
+<span class="nc" id="L56">        sb.append('=');</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        sb.append(((this.versionAffected == null)?&quot;&lt;null&gt;&quot;:this.versionAffected));</span>
+<span class="nc" id="L58">        sb.append(',');</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (sb.charAt((sb.length()- 1)) == ',') {</span>
+<span class="nc" id="L60">            sb.setCharAt((sb.length()- 1), ']');</span>
+        } else {
+<span class="nc" id="L62">            sb.append(']');</span>
+        }
+<span class="nc" id="L64">        return sb.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L69">        int result = 1;</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        result = ((result* 31)+((this.versionValue == null)? 0 :this.versionValue.hashCode()));</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        result = ((result* 31)+((this.versionAffected == null)? 0 :this.versionAffected.hashCode()));</span>
+<span class="nc" id="L72">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (other == this) {</span>
+<span class="nc" id="L78">            return true;</span>
+        }
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if ((other instanceof VersionDatum) == false) {</span>
+<span class="nc" id="L81">            return false;</span>
+        }
+<span class="nc" id="L83">        VersionDatum rhs = ((VersionDatum) other);</span>
+<span class="nc bnc" id="L84" title="All 12 branches missed.">        return (((this.versionValue == rhs.versionValue)||((this.versionValue!= null)&amp;&amp;this.versionValue.equals(rhs.versionValue)))&amp;&amp;((this.versionAffected == rhs.versionAffected)||((this.versionAffected!= null)&amp;&amp;this.versionAffected.equals(rhs.versionAffected))));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CpeMemoryIndex.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.cpe</a> &gt; <span class="el_source">CpeMemoryIndex.java</span></div><h1>CpeMemoryIndex.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2013 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.data.cpe;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.concurrent.ThreadSafe;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexOptions;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.MMapDirectory;
+import org.owasp.dependencycheck.data.lucene.SearchFieldAnalyzer;
+import org.owasp.dependencycheck.data.nvdcve.CveDB;
+import org.owasp.dependencycheck.data.nvdcve.DatabaseException;
+import org.owasp.dependencycheck.utils.Pair;
+import org.owasp.dependencycheck.utils.Settings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * &lt;p&gt;
+ * An in memory Lucene index that contains the vendor/product combinations from
+ * the CPE (application) identifiers within the NVD CVE data.&lt;/p&gt;
+ *
+ * This is the last remaining singleton in dependency-check-core; The use of
+ * this singleton - while it may not technically be thread-safe (one database
+ * used to build this index may not have the same entries as another) the risk
+ * of this is currently believed to be small. As this memory index consumes a
+ * large amount of memory we will remain using the singleton pattern for now.
+ *
+ * @author Jeremy Long
+ */
+@ThreadSafe
+public final class CpeMemoryIndex implements AutoCloseable {
+
+    /**
+     * Singleton instance.
+     */
+<span class="fc" id="L74">    private static final CpeMemoryIndex INSTANCE = new CpeMemoryIndex();</span>
+    /**
+     * The logger.
+     */
+<span class="fc" id="L78">    private static final Logger LOGGER = LoggerFactory.getLogger(CpeMemoryIndex.class);</span>
+    /**
+     * The in memory Lucene index.
+     */
+    private MMapDirectory index;
+    /**
+     * The Lucene IndexReader.
+     */
+    private IndexReader indexReader;
+    /**
+     * The Lucene IndexSearcher.
+     */
+    private IndexSearcher indexSearcher;
+    /**
+     * The Lucene Analyzer used for Searching.
+     */
+    private Analyzer searchingAnalyzer;
+    /**
+     * The Lucene QueryParser used for Searching.
+     */
+    private QueryParser queryParser;
+    /**
+     * The product field analyzer.
+     */
+    private SearchFieldAnalyzer productFieldAnalyzer;
+    /**
+     * The vendor field analyzer.
+     */
+    private SearchFieldAnalyzer vendorFieldAnalyzer;
+    /**
+     * Track the number of current users of the Lucene index; used to track it
+     * it is okay to actually close the index.
+     */
+<span class="fc" id="L111">    private final AtomicInteger usageCount = new AtomicInteger(0);</span>
+
+    /**
+     * private constructor for singleton.
+     */
+<span class="fc" id="L116">    private CpeMemoryIndex() {</span>
+<span class="fc" id="L117">    }</span>
+
+    /**
+     * Gets the singleton instance of the CpeMemoryIndex.
+     *
+     * @return the instance of the CpeMemoryIndex
+     */
+    public static CpeMemoryIndex getInstance() {
+<span class="fc" id="L125">        return INSTANCE;</span>
+    }
+
+    /**
+     * Creates and loads data into an in memory index.
+     *
+     * @param cve the data source to retrieve the cpe data
+     * @param settings a reference to the dependency-check settings
+     * @throws IndexException thrown if there is an error creating the index
+     */
+    public synchronized void open(CveDB cve, Settings settings) throws IndexException {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (INSTANCE.usageCount.addAndGet(1) == 1) {</span>
+            try {
+<span class="fc" id="L138">                final File temp = settings.getTempDirectory();</span>
+<span class="fc" id="L139">                index = new MMapDirectory(temp.toPath());</span>
+<span class="fc" id="L140">                buildIndex(cve);</span>
+
+<span class="fc" id="L142">                indexReader = DirectoryReader.open(index);</span>
+<span class="nc" id="L143">            } catch (IOException ex) {</span>
+<span class="nc" id="L144">                throw new IndexException(ex);</span>
+<span class="fc" id="L145">            }</span>
+<span class="fc" id="L146">            indexSearcher = new IndexSearcher(indexReader);</span>
+<span class="fc" id="L147">            searchingAnalyzer = createSearchingAnalyzer();</span>
+<span class="fc" id="L148">            queryParser = new QueryParser(Fields.DOCUMENT_KEY, searchingAnalyzer);</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    /**
+     * returns whether or not the index is open.
+     *
+     * @return whether or not the index is open
+     */
+    public synchronized boolean isOpen() {
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        return INSTANCE.usageCount.get() &gt; 0;</span>
+    }
+
+    /**
+     * Creates an Analyzer for searching the CPE Index.
+     *
+     * @return the CPE Analyzer.
+     */
+    private Analyzer createSearchingAnalyzer() {
+<span class="fc" id="L167">        final Map&lt;String, Analyzer&gt; fieldAnalyzers = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L168">        fieldAnalyzers.put(Fields.DOCUMENT_KEY, new KeywordAnalyzer());</span>
+<span class="fc" id="L169">        productFieldAnalyzer = new SearchFieldAnalyzer();</span>
+<span class="fc" id="L170">        vendorFieldAnalyzer = new SearchFieldAnalyzer();</span>
+<span class="fc" id="L171">        fieldAnalyzers.put(Fields.PRODUCT, productFieldAnalyzer);</span>
+<span class="fc" id="L172">        fieldAnalyzers.put(Fields.VENDOR, vendorFieldAnalyzer);</span>
+
+<span class="fc" id="L174">        return new PerFieldAnalyzerWrapper(new KeywordAnalyzer(), fieldAnalyzers);</span>
+    }
+
+    /**
+     * Closes the CPE Index.
+     */
+    @Override
+    public synchronized void close() {
+<span class="fc" id="L182">        final int count = INSTANCE.usageCount.get() - 1;</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (count &lt;= 0) {</span>
+<span class="fc" id="L184">            INSTANCE.usageCount.set(0);</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">            if (searchingAnalyzer != null) {</span>
+<span class="fc" id="L186">                searchingAnalyzer.close();</span>
+<span class="fc" id="L187">                searchingAnalyzer = null;</span>
+            }
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">            if (indexReader != null) {</span>
+                try {
+<span class="fc" id="L191">                    indexReader.close();</span>
+<span class="nc" id="L192">                } catch (IOException ex) {</span>
+<span class="nc" id="L193">                    LOGGER.trace(&quot;&quot;, ex);</span>
+<span class="fc" id="L194">                }</span>
+<span class="fc" id="L195">                indexReader = null;</span>
+            }
+<span class="fc" id="L197">            queryParser = null;</span>
+<span class="fc" id="L198">            indexSearcher = null;</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">            if (index != null) {</span>
+                try {
+<span class="fc" id="L201">                    index.close();</span>
+<span class="nc" id="L202">                } catch (IOException ex) {</span>
+<span class="nc" id="L203">                    LOGGER.trace(&quot;&quot;, ex);</span>
+<span class="fc" id="L204">                }</span>
+<span class="fc" id="L205">                index = null;</span>
+            }
+        }
+<span class="fc" id="L208">    }</span>
+
+    /**
+     * Builds the CPE Lucene Index based off of the data within the CveDB.
+     *
+     * @param cve the data base containing the CPE data
+     * @throws IndexException thrown if there is an issue creating the index
+     */
+    private void buildIndex(CveDB cve) throws IndexException {
+<span class="fc" id="L217">        try (Analyzer analyzer = createSearchingAnalyzer();</span>
+<span class="fc" id="L218">                IndexWriter indexWriter = new IndexWriter(index,</span>
+                        new IndexWriterConfig(analyzer))) {
+
+<span class="fc" id="L221">            final FieldType ft = new FieldType(TextField.TYPE_STORED);</span>
+            //ignore term frequency
+<span class="fc" id="L223">            ft.setIndexOptions(IndexOptions.DOCS);</span>
+            //ignore field length normalization
+<span class="fc" id="L225">            ft.setOmitNorms(true);</span>
+            // Tip: reuse the Document and Fields for performance...
+            // See &quot;Re-use Document and Field instances&quot; from
+            // http://wiki.apache.org/lucene-java/ImproveIndexingSpeed
+<span class="fc" id="L229">            final Document doc = new Document();</span>
+<span class="fc" id="L230">            final Field v = new Field(Fields.VENDOR, Fields.VENDOR, ft);</span>
+<span class="fc" id="L231">            final Field p = new Field(Fields.PRODUCT, Fields.PRODUCT, ft);</span>
+
+<span class="fc" id="L233">            doc.add(v);</span>
+<span class="fc" id="L234">            doc.add(p);</span>
+
+<span class="fc" id="L236">            final Set&lt;Pair&lt;String, String&gt;&gt; data = cve.getVendorProductList();</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">            for (Pair&lt;String, String&gt; pair : data) {</span>
+<span class="pc bpc" id="L238" title="2 of 4 branches missed.">                if (pair.getLeft() != null &amp;&amp; pair.getRight() != null) {</span>
+<span class="fc" id="L239">                    v.setStringValue(pair.getLeft());</span>
+<span class="fc" id="L240">                    p.setStringValue(pair.getRight());</span>
+<span class="fc" id="L241">                    indexWriter.addDocument(doc);</span>
+<span class="fc" id="L242">                    resetAnalyzers();</span>
+                }
+<span class="fc" id="L244">            }</span>
+<span class="fc" id="L245">            indexWriter.commit();</span>
+
+<span class="nc" id="L247">        } catch (DatabaseException ex) {</span>
+<span class="nc" id="L248">            LOGGER.debug(&quot;&quot;, ex);</span>
+<span class="nc" id="L249">            throw new IndexException(&quot;Error reading CPE data&quot;, ex);</span>
+<span class="nc" id="L250">        } catch (IOException ex) {</span>
+<span class="nc" id="L251">            throw new IndexException(&quot;Unable to close an in-memory index&quot;, ex);</span>
+<span class="fc" id="L252">        }</span>
+<span class="fc" id="L253">    }</span>
+
+    /**
+     * Searches the index using the given search string.
+     *
+     * @param searchString the query text
+     * @param maxQueryResults the maximum number of documents to return
+     * @return the TopDocs found by the search
+     * @throws ParseException thrown when the searchString is invalid
+     * @throws IndexException thrown when there is an internal error resetting
+     * the search analyzer
+     * @throws IOException is thrown if there is an issue with the underlying
+     * Index
+     */
+    public synchronized TopDocs search(String searchString, int maxQueryResults) throws ParseException, IndexException, IOException {
+<span class="fc" id="L268">        final Query query = parseQuery(searchString);</span>
+<span class="fc" id="L269">        return search(query, maxQueryResults);</span>
+    }
+
+    /**
+     * Parses the given string into a Lucene Query.
+     *
+     * @param searchString the search text
+     * @return the Query object
+     * @throws ParseException thrown if the search text cannot be parsed
+     * @throws IndexException thrown if there is an error resetting the
+     * analyzers
+     */
+    public synchronized Query parseQuery(String searchString) throws ParseException, IndexException {
+<span class="pc bpc" id="L282" title="2 of 4 branches missed.">        if (searchString == null || searchString.trim().isEmpty()</span>
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">                || &quot;product:() AND vendor:()&quot;.equals(searchString)) {</span>
+<span class="nc" id="L284">            throw new ParseException(&quot;Query is null or empty&quot;);</span>
+        }
+<span class="fc" id="L286">        LOGGER.debug(searchString);</span>
+
+        Query query;
+        try {
+<span class="fc" id="L290">            query = queryParser.parse(searchString);</span>
+<span class="nc" id="L291">        } catch (BooleanQuery.TooManyClauses ex) {</span>
+<span class="nc" id="L292">            BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);</span>
+<span class="nc" id="L293">            query = queryParser.parse(searchString);</span>
+<span class="fc" id="L294">        }</span>
+        try {
+<span class="fc" id="L296">            resetAnalyzers();</span>
+<span class="nc" id="L297">        } catch (IOException ex) {</span>
+<span class="nc" id="L298">            throw new IndexException(&quot;Unable to reset the analyzer after parsing&quot;, ex);</span>
+<span class="fc" id="L299">        }</span>
+<span class="fc" id="L300">        return query;</span>
+    }
+
+    /**
+     * Searches the index using the given query.
+     *
+     * @param query the query used to search the index
+     * @param maxQueryResults the max number of results to return
+     * @return the TopDocs found be the query
+     * @throws CorruptIndexException thrown if the Index is corrupt
+     * @throws IOException thrown if there is an IOException
+     */
+    public synchronized TopDocs search(Query query, int maxQueryResults) throws CorruptIndexException, IOException {
+<span class="fc" id="L313">        return indexSearcher.search(query, maxQueryResults);</span>
+    }
+
+    /**
+     * Retrieves a document from the Index.
+     *
+     * @param documentId the id of the document to retrieve
+     * @return the Document
+     * @throws IOException thrown if there is an IOException
+     */
+    public synchronized Document getDocument(int documentId) throws IOException {
+<span class="fc" id="L324">        return indexSearcher.doc(documentId);</span>
+    }
+
+    /**
+     * Returns the number of CPE entries stored in the index.
+     *
+     * @return the number of CPE entries stored in the index
+     */
+    public synchronized int numDocs() {
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">        if (indexReader == null) {</span>
+<span class="nc" id="L334">            return -1;</span>
+        }
+<span class="fc" id="L336">        return indexReader.numDocs();</span>
+    }
+
+    /**
+     * Method to explain queries matches.
+     *
+     * @param query the query used
+     * @param doc the document matched
+     * @return the expalanation
+     * @throws IOException thrown if there is an index error
+     */
+    public synchronized String explain(Query query, int doc) throws IOException {
+<span class="nc" id="L348">        return indexSearcher.explain(query, doc).toString();</span>
+    }
+
+    /**
+     * Common method to reset the searching analyzers.
+     *
+     * @throws IOException thrown if there is an index error
+     */
+    protected synchronized void resetAnalyzers() throws IOException {
+<span class="fc" id="L357">        productFieldAnalyzer.reset();</span>
+<span class="fc" id="L358">        vendorFieldAnalyzer.reset();</span>
+<span class="fc" id="L359">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataCacheFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Dependency-Check Core</a> &gt; <a href="index.source.html" class="el_package">org.owasp.dependencycheck.data.cache</a> &gt; <span class="el_source">DataCacheFactory.java</span></div><h1>DataCacheFactory.java</h1><pre class="source lang-java linenums">/*
+ * This file is part of dependency-check-core.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright (c) 2019 Jeremy Long. All Rights Reserved.
+ */
+package org.owasp.dependencycheck.data.cache;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Properties;
+import org.apache.commons.jcs.JCS;
+import org.apache.commons.jcs.access.CacheAccess;
+import org.apache.commons.jcs.access.exception.CacheException;
+import org.apache.commons.jcs.engine.CompositeCacheAttributes;
+import org.apache.commons.jcs.engine.behavior.ICompositeCacheAttributes;
+import org.owasp.dependencycheck.data.nexus.MavenArtifact;
+import org.owasp.dependencycheck.data.nodeaudit.Advisory;
+import org.owasp.dependencycheck.utils.FileUtils;
+import org.owasp.dependencycheck.utils.Settings;
+import org.owasp.dependencycheck.xml.pom.Model;
+
+/**
+ * Factory to instantiate cache repositories.
+ *
+ * @author Jeremy Long
+ */
+public class DataCacheFactory {
+
+    /**
+     * The cache directory.
+     */
+    private static final String CACHE_DIRECTORY = &quot;cache&quot;;
+    /**
+     * The cache properties.
+     */
+    private static final String CACHE_PROPERTIES = &quot;dependencycheck-cache.properties&quot;;
+    /**
+     * Whether or not JCS has been initialized.
+     */
+<span class="fc" id="L54">    private static Boolean initialized = false;</span>
+
+    /**
+     * The types of caches that can be instantiated.
+     */
+<span class="fc" id="L59">    private enum CacheType {</span>
+        /**
+         * Used to store node audit analysis.
+         */
+<span class="fc" id="L63">        NODEAUDIT,</span>
+        /**
+         * Used to store the results of searching Maven Central.
+         */
+<span class="fc" id="L67">        CENTRAL,</span>
+        /**
+         * Used to store POM files retrieved from central.
+         */
+<span class="fc" id="L71">        POM</span>
+    }
+
+    /**
+     * Creates the data cache factory.
+     *
+     * @param settings the configuration settings
+     */
+<span class="fc" id="L79">    public DataCacheFactory(Settings settings) {</span>
+<span class="fc" id="L80">        synchronized (DataCacheFactory.class) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (!initialized) {</span>
+                final File cacheDirectory;
+                try {
+<span class="fc" id="L84">                    cacheDirectory = new File(settings.getDataDirectory(), CACHE_DIRECTORY);</span>
+<span class="nc" id="L85">                } catch (IOException ex) {</span>
+<span class="nc" id="L86">                    throw new CacheException(&quot;Unable to obtain disk cache directory path&quot;, ex);</span>
+<span class="fc" id="L87">                }</span>
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">                if (!cacheDirectory.isDirectory() &amp;&amp; !cacheDirectory.mkdirs()) {</span>
+<span class="nc" id="L89">                    throw new CacheException(&quot;Unable to create disk cache: &quot; + cacheDirectory.toString());</span>
+                }
+<span class="fc" id="L91">                try (InputStream in = FileUtils.getResourceAsStream(CACHE_PROPERTIES)) {</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                    if (in == null) {</span>
+<span class="nc" id="L93">                        throw new RuntimeException(&quot;Cache properties `&quot; + CACHE_PROPERTIES + &quot;` could not be found&quot;);</span>
+                    }
+
+<span class="fc" id="L96">                    final Properties properties = new Properties();</span>
+<span class="fc" id="L97">                    properties.load(in);</span>
+<span class="fc" id="L98">                    properties.put(&quot;jcs.auxiliary.ODC.attributes.DiskPath&quot;, cacheDirectory.getCanonicalPath());</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                    for (CacheType t : CacheType.values()) {</span>
+<span class="fc" id="L100">                        final File fp = new File(cacheDirectory, t.toString());</span>
+<span class="fc" id="L101">                        properties.put(&quot;jcs.auxiliary.&quot; + t.toString() + &quot;.attributes.DiskPath&quot;, fp.getCanonicalPath());</span>
+                    }
+
+<span class="fc" id="L104">                    JCS.setConfigProperties(properties);</span>
+<span class="fc" id="L105">                    initialized = true;</span>
+<span class="nc" id="L106">                } catch (IOException ex) {</span>
+<span class="nc" id="L107">                    throw new CacheException(&quot;Error creating disk cache&quot;, ex);</span>
+<span class="fc" id="L108">                }</span>
+            }
+<span class="fc" id="L110">        }</span>
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Returns the data cache for Node Audit.
+     *
+     * @return a references to the data cache for Node Audit
+     */
+    public DataCache&lt;List&lt;Advisory&gt;&gt; getNodeAuditCache() {
+<span class="nc" id="L119">        final ICompositeCacheAttributes attr = new CompositeCacheAttributes();</span>
+<span class="nc" id="L120">        attr.setUseDisk(true);</span>
+<span class="nc" id="L121">        attr.setUseLateral(false);</span>
+<span class="nc" id="L122">        attr.setUseRemote(false);</span>
+<span class="nc" id="L123">        final CacheAccess&lt;String, List&lt;Advisory&gt;&gt; ca = JCS.getInstance(&quot;NODEAUDIT&quot;, attr);</span>
+<span class="nc" id="L124">        final DataCache&lt;List&lt;Advisory&gt;&gt; dc = new DataCache&lt;&gt;(ca);</span>
+<span class="nc" id="L125">        return dc;</span>
+
+    }
+
+    /**
+     * Returns the data cache for POM files.
+     *
+     * @return a references to the data cache for POM files
+     */
+    public DataCache&lt;Model&gt; getPomCache() {
+<span class="fc" id="L135">        final ICompositeCacheAttributes attr = new CompositeCacheAttributes();</span>
+<span class="fc" id="L136">        attr.setUseDisk(true);</span>
+<span class="fc" id="L137">        attr.setUseLateral(false);</span>
+<span class="fc" id="L138">        attr.setUseRemote(false);</span>
+<span class="fc" id="L139">        final CacheAccess&lt;String, Model&gt; ca = JCS.getInstance(&quot;POM&quot;, attr);</span>
+<span class="fc" id="L140">        final DataCache&lt;Model&gt; dc = new DataCache&lt;&gt;(ca);</span>
+<span class="fc" id="L141">        return dc;</span>
+    }
+
+    /**
+     * Returns the data cache for Central search.
+     *
+     * @return a references to the data cache for Central search
+     */
+    public DataCache&lt;List&lt;MavenArtifact&gt;&gt; getCentralCache() {
+<span class="fc" id="L150">        final ICompositeCacheAttributes attr = new CompositeCacheAttributes();</span>
+<span class="fc" id="L151">        attr.setUseDisk(true);</span>
+<span class="fc" id="L152">        attr.setUseLateral(false);</span>
+<span class="fc" id="L153">        attr.setUseRemote(false);</span>
+<span class="fc" id="L154">        final CacheAccess&lt;String, List&lt;MavenArtifact&gt;&gt; ca = JCS.getInstance(&quot;CENTRAL&quot;, attr);</span>
+<span class="fc" id="L155">        final DataCache&lt;List&lt;MavenArtifact&gt;&gt; dc = new DataCache&lt;&gt;(ca);</span>
+<span class="fc" id="L156">        return dc;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
