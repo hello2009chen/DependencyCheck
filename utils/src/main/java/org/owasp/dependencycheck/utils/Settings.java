@@ -750,23 +750,23 @@ public final class Settings {
      * @param properties the properties to log
      */
     private void logProperties(@NotNull final String header, @NotNull final Properties properties) {
-        if (LOGGER.isDebugEnabled()) {
-            initMaskedKeys();
-            final StringWriter sw = new StringWriter();
-            try (PrintWriter pw = new PrintWriter(sw)) {
-                pw.format("%s:%n%n", header);
-                final Enumeration<?> e = properties.propertyNames();
-                while (e.hasMoreElements()) {
-                    final String key = (String) e.nextElement();
-                    final String value = getPrintableValue(key, properties.getProperty(key));
-                    if (value != null) {
-                        pw.format("%s='%s'%n", key, value);
-                    }
-                }
-                pw.flush();
-                LOGGER.debug(sw.toString());
-            }
-        }
+//        if (LOGGER.isDebugEnabled()) {
+//            initMaskedKeys();
+//            final StringWriter sw = new StringWriter();
+//            try (PrintWriter pw = new PrintWriter(sw)) {
+//                pw.format("%s:%n%n", header);
+//                final Enumeration<?> e = properties.propertyNames();
+//                while (e.hasMoreElements()) {
+//                    final String key = (String) e.nextElement();
+//                    final String value = getPrintableValue(key, properties.getProperty(key));
+//                    if (value != null) {
+//                        pw.format("%s='%s'%n", key, value);
+//                    }
+//                }
+//                pw.flush();
+//                LOGGER.debug(sw.toString());
+//            }
+//        }
     }
 
     /**
