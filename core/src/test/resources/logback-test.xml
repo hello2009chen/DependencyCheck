@@ -8,15 +8,11 @@
             <pattern>[%level] %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="console"/>
     </root>
 
-<<<<<<< HEAD:core/src/test/resources/logback-test.xml
     <logger name="org.owasp.dependencycheck.data.nvdcve.BaseDBTestCase" additivity="false" level="ERROR">
-=======
-    <logger name="org.owasp.dependencycheck.data.nvdcve.BaseDBTestCase" additivity="false" level="DEBUG">
->>>>>>> da2446ec4ae891b067d83b23da0a02cb2651d4c9:core/src/test/resources/logback-test.xml
         <appender-ref ref="console"/>
     </logger>
     <logger name="org.owasp.dependencycheck.analyzer.AssemblyAnalyzerTest" additivity="false" level="WARN">
