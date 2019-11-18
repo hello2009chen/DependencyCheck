@@ -119,31 +119,4 @@ public class DriverLoaderTest extends BaseTest {
         }
     }
 
-    /**
-     * Test of load method, of class DriverLoader with an incorrect class name.
-     */
-    @Test(expected = DriverLoadException.class)
-    public void testLoad_String_String_badClassName() throws Exception {
-        String className = "com.mybad.jdbc.Driver";
-        //we know this is in target/test-classes
-        //File testClassPath = (new File(this.getClass().getClassLoader().getResource("org.mortbay.jetty.jar").getPath())).getParentFile();
-        File testClassPath = BaseTest.getResourceAsFile(this, "org.mortbay.jetty.jar").getParentFile();
-        File driver = new File(testClassPath, "../../src/test/resources/mysql-connector-java-5.1.27-bin.jar");
-        assertTrue("MySQL Driver JAR file not found in src/test/resources?", driver.isFile());
-
-        DriverLoader.load(className, driver.getAbsolutePath());
-    }
-
-    /**
-     * Test of load method, of class DriverLoader with an incorrect class path.
-     */
-    @Test(expected = DriverLoadException.class)
-    public void testLoad_String_String_badPath() throws Exception {
-        String className = "com.mysql.jdbc.Driver";
-        //we know this is in target/test-classes
-        //File testClassPath = (new File(this.getClass().getClassLoader().getResource("org.mortbay.jetty.jar").getPath())).getParentFile();
-        File testClassPath = BaseTest.getResourceAsFile(this, "org.mortbay.jetty.jar").getParentFile();
-        File driver = new File(testClassPath, "../../src/test/bad/mysql-connector-java-5.1.27-bin.jar");
-        DriverLoader.load(className, driver.getAbsolutePath());
-    }
 }
